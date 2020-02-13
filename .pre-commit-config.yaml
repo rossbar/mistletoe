@@ -6,7 +6,7 @@ exclude: >
       \.vscode/settings\.json|
       test/samples/.*|
       resources/.*|
-      .*\.xml
+      test/commonmark/commonmark\.json
     )$
 
 repos:
