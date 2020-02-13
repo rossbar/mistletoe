@@ -42,7 +42,7 @@ class FileWrapper:
             self._index -= 1
 
 
-def tokenize(iterable, token_types):
+def tokenize(iterable, token_types, start_line=0):
     """
     Searches for token_types in iterable.
 
@@ -53,7 +53,7 @@ def tokenize(iterable, token_types):
     Returns:
         block-level token instances.
     """
-    return make_tokens(tokenize_block(iterable, token_types))
+    return make_tokens(tokenize_block(iterable, token_types, start_line))
 
 
 def tokenize_block(iterable, token_types, start_line=0):

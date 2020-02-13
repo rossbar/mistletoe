@@ -39,10 +39,11 @@ Stores a reference to the current document token.
 When parsing, footnote entries will be stored in the document by
 accessing this pointer.
 """
+# TODO make thread local
 _root_node = None
 
 
-def tokenize(lines):
+def tokenize(lines, start_line=0):
     """
     A wrapper around block_tokenizer.tokenize. Pass in all block-level
     token constructors as arguments to block_tokenizer.tokenize.
@@ -55,7 +56,7 @@ def tokenize(lines):
 
     See also: block_tokenizer.tokenize, span_token.tokenize_inner.
     """
-    return tokenizer.tokenize(lines, _token_types.value)
+    return tokenizer.tokenize(lines, _token_types.value, start_line)
 
 
 def add_token(token_cls, position=0):
