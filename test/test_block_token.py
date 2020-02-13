@@ -203,7 +203,7 @@ class TestList(unittest.TestCase):
 
     def test_sublist(self):
         lines = ["- foo\n", "  + bar\n"]
-        token, = block_token.tokenize(lines)
+        (token,) = block_token.tokenize(lines)
         self.assertIsInstance(token, block_token.List)
 
 
@@ -239,7 +239,7 @@ class TestTable(unittest.TestCase):
     def test_easy_table(self):
         lines = ["header 1 | header 2\n", "    ---: | :---\n", "  cell 1 | cell 2\n"]
         with patch("mistletoe.block_token.TableRow") as mock:
-            token, = block_token.tokenize(lines)
+            (token,) = block_token.tokenize(lines)
             self.assertIsInstance(token, block_token.Table)
             self.assertTrue(hasattr(token, "header"))
             self.assertEqual(token.column_align, [1, None])
@@ -249,7 +249,7 @@ class TestTable(unittest.TestCase):
 
     def test_not_easy_table(self):
         lines = ["not header 1 | not header 2\n", "foo | bar\n"]
-        token, = block_token.tokenize(lines)
+        (token,) = block_token.tokenize(lines)
         self.assertIsInstance(token, block_token.Paragraph)
 
 

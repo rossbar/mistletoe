@@ -110,7 +110,7 @@ class TestRawText(unittest.TestCase):
 
 class TestLineBreak(unittest.TestCase):
     def test_parse(self):
-        token, = span_token.tokenize_inner("  \n")
+        (token,) = span_token.tokenize_inner("  \n")
         self.assertIsInstance(token, span_token.LineBreak)
 
 
