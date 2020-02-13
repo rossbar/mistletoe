@@ -4,6 +4,8 @@ Built-in block-level token classes.
 
 import re
 from itertools import zip_longest
+from threading import local
+
 import mistletoe.block_tokenizer as tokenizer
 from mistletoe import span_token
 from mistletoe.core_tokens import (
@@ -53,7 +55,7 @@ def tokenize(lines):
 
     See also: block_tokenizer.tokenize, span_token.tokenize_inner.
     """
-    return tokenizer.tokenize(lines, _token_types)
+    return tokenizer.tokenize(lines, _token_types.value)
 
 
 def add_token(token_cls, position=0):
@@ -65,7 +67,7 @@ def add_token(token_cls, position=0):
         token_cls (SpanToken): token to be included in the parsing process.
         position (int): the position for the token class to be inserted into.
     """
-    _token_types.insert(position, token_cls)
+    _token_types.value.insert(position, token_cls)
 
 
 def remove_token(token_cls):
@@ -76,7 +78,7 @@ def remove_token(token_cls):
     Arguments:
         token_cls (BlockToken): token to be removed from the parsing process.
     """
-    _token_types.remove(token_cls)
+    _token_types.value.remove(token_cls)
 
 
 def reset_tokens():
@@ -84,7 +86,7 @@ def reset_tokens():
     Resets global _token_types to all token classes in __all__.
     """
     global _token_types
-    _token_types = [globals()[cls_name] for cls_name in __all__]
+    _token_types.value = [globals()[cls_name] for cls_name in __all__]
 
 
 class BlockToken(object):
@@ -280,7 +282,7 @@ class Quote(BlockToken):
         # block level tokens are parsed here, so that footnotes
         # in quotes can be recognized before span-level tokenizing.
         Paragraph.parse_setext = False
-        parse_buffer = tokenizer.tokenize_block(line_buffer, _token_types)
+        parse_buffer = tokenizer.tokenize_block(line_buffer, _token_types.value)
         Paragraph.parse_setext = True
         return parse_buffer
 
@@ -588,7 +590,7 @@ class ListItem(BlockToken):
             line_buffer.append(line[prepend:])
         next_line = lines.peek()
         if empty_first_line and next_line is not None and next_line.strip() == "":
-            parse_buffer = tokenizer.tokenize_block([next(lines)], _token_types)
+            parse_buffer = tokenizer.tokenize_block([next(lines)], _token_types.value)
             next_line = lines.peek()
             if next_line is not None:
                 marker_info = cls.parse_marker(next_line)
@@ -637,7 +639,7 @@ class ListItem(BlockToken):
 
         # block-level tokens are parsed here, so that footnotes can be
         # recognized before span-level parsing.
-        parse_buffer = tokenizer.tokenize_block(line_buffer, _token_types)
+        parse_buffer = tokenizer.tokenize_block(line_buffer, _token_types.value)
         return (parse_buffer, prepend, leader), next_marker
 
 
@@ -996,5 +998,6 @@ class HTMLBlock(BlockToken):
         return line_buffer
 
 
-_token_types = []
+_token_types = local()
+_token_types.value = []
 reset_tokens()

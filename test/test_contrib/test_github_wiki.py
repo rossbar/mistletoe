@@ -13,8 +13,8 @@ class TestGithubWiki(TestCase):
 
     def test_parse(self):
         MockRawText = mock.Mock(autospec="mistletoe.span_token.RawText")
-        RawText = _token_types.pop()
-        _token_types.append(MockRawText)
+        RawText = _token_types.value.pop()
+        _token_types.value.append(MockRawText)
         try:
             tokens = tokenize_inner("text with [[wiki | target]]")
             token = tokens[1]
@@ -23,7 +23,7 @@ class TestGithubWiki(TestCase):
             # TODO this assert is failing if part of a full pytest run only
             # MockRawText.assert_has_calls([mock.call('text with '), mock.call('wiki')])
         finally:
-            _token_types[-1] = RawText
+            _token_types.value[-1] = RawText
 
     def test_render(self):
         token = next(iter(tokenize_inner("[[wiki|target]]")))

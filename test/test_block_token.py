@@ -7,11 +7,11 @@ from mistletoe.block_tokenizer import FileWrapper
 class TestToken(unittest.TestCase):
     def setUp(self):
         self.addCleanup(
-            lambda: span_token._token_types.__setitem__(-1, span_token.RawText)
+            lambda: span_token._token_types.value.__setitem__(-1, span_token.RawText)
         )
         patcher = patch("mistletoe.span_token.RawText")
         self.mock = patcher.start()
-        span_token._token_types[-1] = self.mock
+        span_token._token_types.value[-1] = self.mock
         self.addCleanup(patcher.stop)
 
     def _test_match(self, token_cls, lines, arg, **kwargs):

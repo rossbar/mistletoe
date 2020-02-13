@@ -76,8 +76,8 @@ class Scheme(BaseRenderer):
             "Number": self.render_number,
             "Variable": self.render_variable,
         }
-        block_token._token_types = []
-        span_token._token_types = [Expr, Number, Variable, Whitespace]
+        block_token._token_types.value = []
+        span_token._token_types.value = [Expr, Number, Variable, Whitespace]
 
         self.env = ChainMap(
             {
