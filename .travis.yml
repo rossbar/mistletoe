@@ -1,21 +1,17 @@
 language: python
-python:
-    - "3.3"
-    - "3.4"
-    - "3.5"
-    - "3.6"
+cache: pip
 matrix:
-  include:
-    - python: 3.7
-      dist: xenial
-      sudo: true
+    include:
+      - python: 3.4
+      - python: 3.5
+      - python: 3.6
+      - python: 3.7
+install:
+  - pip install --upgrade pip wheel setuptools
+  - pip install -e .[testing]
 before_script:
     - (cd test/commonmark && ./spec.sh)
 script:
-    - make test
-    - python3 -m test.commonmark
+    - pytest -v --cov=mistletoe --cov-report=
 after_success:
-    - pip install coveralls
-    - coverage run -a -m unittest
-    - coverage run -a -m test.commonmark
     - coveralls
