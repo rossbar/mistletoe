@@ -18,4 +18,3 @@ for FILE in $FILES; do
 done
 
 git diff
-

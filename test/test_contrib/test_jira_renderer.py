@@ -20,11 +20,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from unittest import TestCase, mock
+from unittest import TestCase
 from mistletoe.span_token import tokenize_inner
 from contrib.jira_renderer import JIRARenderer
 import random
 import string
+
 
 class TestJIRARenderer(TestCase):
     def setUp(self):
@@ -35,9 +36,9 @@ class TestJIRARenderer(TestCase):
     def genRandomString(self, n, hasWhitespace=False):
         source = string.ascii_letters + string.digits
         if hasWhitespace:
-            source = source + ' \t'
-        
-        result = ''.join(random.SystemRandom().choice(source) for _ in range(n))
+            source = source + " \t"
+
+        result = "".join(random.SystemRandom().choice(source) for _ in range(n))
         return result
 
     def textFormatTest(self, inputTemplate, outputTemplate):
@@ -48,23 +49,23 @@ class TestJIRARenderer(TestCase):
         self.assertEqual(expected, actual)
 
     def test_render_strong(self):
-        self.textFormatTest('**a{}**', '*a{}*')
+        self.textFormatTest("**a{}**", "*a{}*")
 
     def test_render_emphasis(self):
-        self.textFormatTest('*a{}*', '_a{}_')
-        
+        self.textFormatTest("*a{}*", "_a{}_")
+
     def test_render_inline_code(self):
-        self.textFormatTest('`a{}b`', '{{{{a{}b}}}}')
+        self.textFormatTest("`a{}b`", "{{{{a{}b}}}}")
 
     def test_render_strikethrough(self):
-        self.textFormatTest('-{}-', '-{}-')
+        self.textFormatTest("-{}-", "-{}-")
 
     def test_render_image(self):
-        token = next(iter(tokenize_inner('![image](foo.jpg)')))
-        expected = '!foo.jpg!'
+        token = next(iter(tokenize_inner("![image](foo.jpg)")))
+        expected = "!foo.jpg!"
         actual = self.renderer.render(token)
         self.assertEqual(expected, actual)
-    
+
     def test_render_footnote_image(self):
         # token = next(tokenize_inner('![image]\n\n[image]: foo.jpg'))
         # expected = '!foo.jpg!'
@@ -73,23 +74,27 @@ class TestJIRARenderer(TestCase):
         pass
 
     def test_render_link(self):
-        url = 'http://{0}.{1}.{2}'.format(self.genRandomString(5), self.genRandomString(5), self.genRandomString(3))
+        url = "http://{0}.{1}.{2}".format(
+            self.genRandomString(5), self.genRandomString(5), self.genRandomString(3)
+        )
         body = self.genRandomString(80, True)
-        token = next(iter(tokenize_inner('[{body}]({url})'.format(url=url, body=body))))
-        expected = '[{body}|{url}]'.format(url=url, body=body)
+        token = next(iter(tokenize_inner("[{body}]({url})".format(url=url, body=body))))
+        expected = "[{body}|{url}]".format(url=url, body=body)
         actual = self.renderer.render(token)
         self.assertEqual(expected, actual)
-    
+
     def test_render_footnote_link(self):
         pass
 
     def test_render_auto_link(self):
-        url = 'http://{0}.{1}.{2}'.format(self.genRandomString(5), self.genRandomString(5), self.genRandomString(3))
-        token = next(iter(tokenize_inner('<{url}>'.format(url=url))))
-        expected = '[{url}]'.format(url=url)
+        url = "http://{0}.{1}.{2}".format(
+            self.genRandomString(5), self.genRandomString(5), self.genRandomString(3)
+        )
+        token = next(iter(tokenize_inner("<{url}>".format(url=url))))
+        expected = "[{url}]".format(url=url)
         actual = self.renderer.render(token)
         self.assertEqual(expected, actual)
-        
+
     def test_render_escape_sequence(self):
         pass
 
@@ -98,7 +103,7 @@ class TestJIRARenderer(TestCase):
 
     def test_render_heading(self):
         pass
-        
+
     def test_render_quote(self):
         pass
 
@@ -134,9 +139,3 @@ class TestJIRARenderer(TestCase):
 
     def test_render_document(self):
         pass
-    
-    
-
-
-    
-    

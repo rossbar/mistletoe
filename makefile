@@ -25,4 +25,3 @@ commonmark:
 
 docs:
 	${PYTHON_EXEC} -m docs
-

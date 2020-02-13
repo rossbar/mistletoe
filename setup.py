@@ -28,7 +28,7 @@ setup(
     keywords="markdown lexer parser development",
     python_requires="~=3.4",
     extras_require={
-        "code_style": ["flake8<3.8.0,>=3.7.0", "black", "pre-commit==1.17.0"],
+        "code_style": ["flake8<3.8.0,>=3.7.0", "black==19.10b0", "pre-commit==1.17.0"],
         "testing": ["coverage", "pytest>=3.6,<4", "pytest-cov"],
     },
     zip_safe=False,

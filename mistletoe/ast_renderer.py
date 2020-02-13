@@ -5,6 +5,7 @@ Abstract syntax tree renderer for mistletoe.
 import json
 from mistletoe.base_renderer import BaseRenderer
 
+
 class ASTRenderer(BaseRenderer):
     def render(self, token):
         """
@@ -12,10 +13,11 @@ class ASTRenderer(BaseRenderer):
 
         Overrides super().render. Delegates the logic to get_ast.
         """
-        return json.dumps(get_ast(token), indent=2) + '\n'
+        return json.dumps(get_ast(token), indent=2) + "\n"
 
     def __getattr__(self, name):
-        return lambda token: ''
+        return lambda token: ""
+
 
 def get_ast(token):
     """
@@ -32,10 +34,10 @@ def get_ast(token):
     #
     #   [1]: https://docs.python.org/3/whatsnew/3.6.html
     #   [2]: https://github.com/syntax-tree/mdast
-    node['type'] = token.__class__.__name__
+    node["type"] = token.__class__.__name__
     node.update(token.__dict__)
-    if 'header' in node:
-        node['header'] = get_ast(node['header'])
-    if 'children' in node:
-        node['children'] = [get_ast(child) for child in node['children']]
+    if "header" in node:
+        node["header"] = get_ast(node["header"])
+    if "children" in node:
+        node["children"] = [get_ast(child) for child in node["children"]]
     return node

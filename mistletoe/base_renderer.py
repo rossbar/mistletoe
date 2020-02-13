@@ -6,6 +6,7 @@ import re
 import sys
 from mistletoe import block_token, span_token
 
+
 class BaseRenderer(object):
     """
     Base class for renderers.
@@ -41,34 +42,35 @@ class BaseRenderer(object):
         _extras (list): a list of custom tokens to be added to the
                         parsing process.
     """
+
     _parse_name = re.compile(r"([A-Z][a-z]+|[A-Z]+(?![a-z]))")
 
     def __init__(self, *extras):
         self.render_map = {
-            'Strong':         self.render_strong,
-            'Emphasis':       self.render_emphasis,
-            'InlineCode':     self.render_inline_code,
-            'RawText':        self.render_raw_text,
-            'Strikethrough':  self.render_strikethrough,
-            'Image':          self.render_image,
-            'Link':           self.render_link,
-            'AutoLink':       self.render_auto_link,
-            'EscapeSequence': self.render_escape_sequence,
-            'Heading':        self.render_heading,
-            'SetextHeading':  self.render_heading,
-            'Quote':          self.render_quote,
-            'Paragraph':      self.render_paragraph,
-            'CodeFence':      self.render_block_code,
-            'BlockCode':      self.render_block_code,
-            'List':           self.render_list,
-            'ListItem':       self.render_list_item,
-            'Table':          self.render_table,
-            'TableRow':       self.render_table_row,
-            'TableCell':      self.render_table_cell,
-            'ThematicBreak':  self.render_thematic_break,
-            'LineBreak':      self.render_line_break,
-            'Document':       self.render_document,
-            }
+            "Strong": self.render_strong,
+            "Emphasis": self.render_emphasis,
+            "InlineCode": self.render_inline_code,
+            "RawText": self.render_raw_text,
+            "Strikethrough": self.render_strikethrough,
+            "Image": self.render_image,
+            "Link": self.render_link,
+            "AutoLink": self.render_auto_link,
+            "EscapeSequence": self.render_escape_sequence,
+            "Heading": self.render_heading,
+            "SetextHeading": self.render_heading,
+            "Quote": self.render_quote,
+            "Paragraph": self.render_paragraph,
+            "CodeFence": self.render_block_code,
+            "BlockCode": self.render_block_code,
+            "List": self.render_list,
+            "ListItem": self.render_list_item,
+            "Table": self.render_table,
+            "TableRow": self.render_table_row,
+            "TableCell": self.render_table_cell,
+            "ThematicBreak": self.render_thematic_break,
+            "LineBreak": self.render_line_break,
+            "Document": self.render_document,
+        }
         self._extras = extras
 
         for token in extras:
@@ -107,7 +109,7 @@ class BaseRenderer(object):
         Arguments:
             token: a branch node who has children attribute.
         """
-        return ''.join(map(self.render, token.children))
+        return "".join(map(self.render, token.children))
 
     def __enter__(self):
         """
@@ -126,8 +128,8 @@ class BaseRenderer(object):
 
     @classmethod
     def _cls_to_func(cls, cls_name):
-        snake = '_'.join(map(str.lower, cls._parse_name.findall(cls_name)))
-        return 'render_{}'.format(snake)
+        snake = "_".join(map(str.lower, cls._parse_name.findall(cls_name)))
+        return "render_{}".format(snake)
 
     @staticmethod
     def _tokens_from_module(module):
@@ -160,8 +162,9 @@ class BaseRenderer(object):
         I still think this is heavy wizardry.
         Let me know if you would like this method removed.
         """
-        if not name.startswith('render_'):
-            msg = '{cls} object has no attribute {name}'.format(cls=type(self).__name__, name=name)
+        if not name.startswith("render_"):
+            msg = "{cls} object has no attribute {name}".format(
+                cls=type(self).__name__, name=name
+            )
             raise AttributeError(msg).with_traceback(sys.exc_info()[2])
         return self.render_inner
-

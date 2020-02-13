@@ -1,7 +1,6 @@
 from mistletoe import Document, HTMLRenderer, __version__
 
-INCLUDE = {'README.md': 'index.html',
-           'CONTRIBUTING.md': 'contributing.html'}
+INCLUDE = {"README.md": "index.html", "CONTRIBUTING.md": "contributing.html"}
 
 METADATA = """
 <head>
@@ -16,7 +15,7 @@ METADATA = """
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
   <script>hljs.initHighlightingOnLoad();</script>
 </head>
-"""
+"""  # noqa: E501
 
 
 class DocRenderer(HTMLRenderer):
@@ -26,25 +25,28 @@ class DocRenderer(HTMLRenderer):
     def render_document(self, token, name="README.md"):
         pattern = "<html>{}<body>{}</body></html>"
         self.footnotes.update(token.footnotes)
-        for filename, new_link in getattr(self, 'files', {}).items():
+        for filename, new_link in getattr(self, "files", {}).items():
             for k, v in self.footnotes.items():
                 if v == filename:
                     self.footnotes[k] = new_link
-        subtitle = ' | {}'.format('version ' + __version__ if name == 'README.md' else name.split('.')[0].lower())
+        subtitle = " | {}".format(
+            "version " + __version__
+            if name == "README.md"
+            else name.split(".")[0].lower()
+        )
         return pattern.format(METADATA.format(subtitle), self.render_inner(token))
 
     def _replace_link(self, token):
-        token.target = getattr(self, 'files', {}).get(token.target, token.target)
+        token.target = getattr(self, "files", {}).get(token.target, token.target)
         return token
 
 
 def build(files=None):
     files = files or INCLUDE
     for f in files:
-        with open(f, 'r') as fin:
-            rendered_file = 'docs/' + files[f]
-            with open(rendered_file, 'w+') as fout:
+        with open(f, "r") as fin:
+            rendered_file = "docs/" + files[f]
+            with open(rendered_file, "w+") as fout:
                 with DocRenderer() as renderer:
                     renderer.files = files
                     print(renderer.render_document(Document(fin), f), file=fout)
-

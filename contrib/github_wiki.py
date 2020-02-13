@@ -7,7 +7,7 @@ from mistletoe.span_token import SpanToken
 from mistletoe.html_renderer import HTMLRenderer
 
 
-__all__ = ['GithubWiki', 'GithubWikiRenderer']
+__all__ = ["GithubWiki", "GithubWikiRenderer"]
 
 
 class GithubWiki(SpanToken):

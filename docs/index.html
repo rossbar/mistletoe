@@ -34,7 +34,7 @@ components.
   currently available: that is, over 4 times faster than
   <a href="https://github.com/waylan/Python-Markdown">Python-Markdown</a>, and much faster than
   <a href="https://github.com/trentm/python-markdown2">Python-Markdown2</a>.
-  
+
   See the <a href="#performance">performance</a> section for details.
 </p>
 </li>
@@ -206,7 +206,7 @@ class GithubWiki(SpanToken):
 <h3>A new renderer</h3>
 <p>Adding a custom token to the parsing process usually involves a lot
 of nasty implementation details. Fortunately, mistletoe takes care
-of most of them for you. Simply pass your custom token class to 
+of most of them for you. Simply pass your custom token class to
 <code>super().__init__()</code> does the trick:
 </p>
 <pre><code class="lang-python">from mistletoe.html_renderer import HTMLRenderer

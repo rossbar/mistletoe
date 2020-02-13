@@ -24,7 +24,7 @@ Features
   that is, 2 to 3 times as fast as [Commonmark-py][commonmark-py],
   and still roughly 30% faster than [Python-Markdown][python-markdown].
   Running with PyPy yields comparable performance with [mistune][mistune].
-  
+
   See the [performance](#performance) section for details.
 
 * **Spec-compliant**:
@@ -38,9 +38,9 @@ Features
   and custom block-level and span-level tokens can easily be added.
   Writing a new renderer for mistletoe is a relatively
   trivial task.
-  
+
   You can even write [a Lisp][scheme] in it.
-  
+
 Some alternative output formats:
 
 * HTML
@@ -372,7 +372,7 @@ If we set `GitHubWiki.precedence = 6`, we have:
 
 Adding a custom token to the parsing process usually involves a lot
 of nasty implementation details. Fortunately, mistletoe takes care
-of most of them for you. Simply pass your custom token class to 
+of most of them for you. Simply pass your custom token class to
 `super().__init__()` does the trick:
 
 ```python

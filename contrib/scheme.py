@@ -1,32 +1,35 @@
-import re
 from collections import ChainMap
+from functools import reduce
+import re
+
 from mistletoe import BaseRenderer, span_token, block_token
 from mistletoe.core_tokens import MatchObj
 
 
 class Program(block_token.BlockToken):
     def __init__(self, lines):
-        self.children = span_token.tokenize_inner(''.join([line.strip() for line in lines]))
+        self.children = span_token.tokenize_inner(
+            "".join([line.strip() for line in lines])
+        )
 
 
 class Expr(span_token.SpanToken):
     @classmethod
     def find(cls, string):
         matches = []
-        count = 0
         start = []
         for i, c in enumerate(string):
-            if c == '(':
+            if c == "(":
                 start.append(i)
-            elif c == ')':
+            elif c == ")":
                 pos = start.pop()
                 end_pos = i + 1
-                content = string[pos+1:i]
-                matches.append(MatchObj(pos, end_pos, (pos+1, i, content)))
+                content = string[pos + 1 : i]
+                matches.append(MatchObj(pos, end_pos, (pos + 1, i, content)))
         return matches
 
     def __repr__(self):
-        return '<Expr {}>'.format(self.children)
+        return "<Expr {}>".format(self.children)
 
 
 class Number(span_token.SpanToken):
@@ -37,7 +40,7 @@ class Number(span_token.SpanToken):
         self.number = eval(match.group(0))
 
     def __repr__(self):
-        return '<Number {}>'.format(self.number)
+        return "<Number {}>".format(self.number)
 
 
 class Variable(span_token.SpanToken):
@@ -48,7 +51,7 @@ class Variable(span_token.SpanToken):
         self.name = match.group(0)
 
     def __repr__(self):
-        return '<Variable {!r}>'.format(self.name)
+        return "<Variable {!r}>".format(self.name)
 
 
 class Whitespace(span_token.SpanToken):
@@ -76,33 +79,41 @@ class Scheme(BaseRenderer):
         block_token._token_types = []
         span_token._token_types = [Expr, Number, Variable, Whitespace]
 
-        self.env = ChainMap({
-            "define": self.define,
-            "lambda": lambda expr_token, *body: Procedure(expr_token, body, self.env),
-            "+":  lambda x, y: self.render(x) + self.render(y),
-            "-":  lambda x, y: self.render(x) - self.render(y),
-            "*":  lambda x, y: self.render(x) * self.render(y),
-            "/":  lambda x, y: self.render(x) / self.render(y),
-            "<":  lambda x, y: self.render(x) < self.render(y),
-            ">":  lambda x, y: self.render(x) > self.render(y),
-            "<=": lambda x, y: self.render(x) <= self.render(y),
-            ">=": lambda x, y: self.render(x) >= self.render(y),
-            "=":  lambda x, y: self.render(x) == self.render(y),
-            "true": True,
-            "false": False,
-            "cons": lambda x, y: (self.render(x), self.render(y)),
-            "car": lambda pair: self.render(pair)[0],
-            "cdr": lambda pair: self.render(pair)[1],
-            "and": lambda *args: all(map(self.render, args)),
-            "or": lambda *args: any(map(self.render, args)),
-            "not": lambda x: not self.render(x),
-            "if": lambda cond, true, false: self.render(true) if self.render(cond) else self.render(false),
-            "cond": self.cond,
-            "null": None,
-            "null?": lambda x: self.render(x) is None,
-            "list": lambda *args: reduce(lambda x, y: (y, x), map(self.render, reversed(args)), None),
-            "display": lambda *args: print(*map(self.render, args)),
-        })
+        self.env = ChainMap(
+            {
+                "define": self.define,
+                "lambda": lambda expr_token, *body: Procedure(
+                    expr_token, body, self.env
+                ),
+                "+": lambda x, y: self.render(x) + self.render(y),
+                "-": lambda x, y: self.render(x) - self.render(y),
+                "*": lambda x, y: self.render(x) * self.render(y),
+                "/": lambda x, y: self.render(x) / self.render(y),
+                "<": lambda x, y: self.render(x) < self.render(y),
+                ">": lambda x, y: self.render(x) > self.render(y),
+                "<=": lambda x, y: self.render(x) <= self.render(y),
+                ">=": lambda x, y: self.render(x) >= self.render(y),
+                "=": lambda x, y: self.render(x) == self.render(y),
+                "true": True,
+                "false": False,
+                "cons": lambda x, y: (self.render(x), self.render(y)),
+                "car": lambda pair: self.render(pair)[0],
+                "cdr": lambda pair: self.render(pair)[1],
+                "and": lambda *args: all(map(self.render, args)),
+                "or": lambda *args: any(map(self.render, args)),
+                "not": lambda x: not self.render(x),
+                "if": lambda cond, true, false: self.render(true)
+                if self.render(cond)
+                else self.render(false),
+                "cond": self.cond,
+                "null": None,
+                "null?": lambda x: self.render(x) is None,
+                "list": lambda *args: reduce(
+                    lambda x, y: (y, x), map(self.render, reversed(args)), None
+                ),
+                "display": lambda *args: print(*map(self.render, args)),
+            }
+        )
 
     def render_inner(self, token):
         result = None
@@ -132,7 +143,7 @@ class Scheme(BaseRenderer):
     def cond(self, *exprs):
         for expr in exprs:
             test, value = expr.children
-            if test == 'else' and 'else' not in self.env:
+            if test == "else" and "else" not in self.env:
                 return self.render(value)
             if self.render(test):
                 return self.render(value)
@@ -151,9 +162,7 @@ class Scheme(BaseRenderer):
         return result
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     with Scheme() as renderer:
-        prog = ["(define x (* 2 21))",
-                "x"]
+        prog = ["(define x (* 2 21))", "x"]
         print(renderer.render(Program(prog)))
-

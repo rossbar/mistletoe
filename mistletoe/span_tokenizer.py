@@ -19,7 +19,9 @@ def find_tokens(string, token_types, fallback_token):
     tokens = []
     for token_type in token_types:
         for m in token_type.find(string):
-            tokens.append(ParseToken(m.start(), m.end(), m, string, token_type, fallback_token))
+            tokens.append(
+                ParseToken(m.start(), m.end(), m, string, token_type, fallback_token)
+            )
     return sorted(tokens)
 
 
@@ -49,13 +51,13 @@ def eval_new_child(parent, child):
 
 def relation(x, y):
     if x.end <= y.start:
-        return 0      # x preceeds y
+        return 0  # x preceeds y
     if x.end >= y.end:
         if x.parse_start <= y.start and x.parse_end >= y.end:
             return 2  # x contains y
         if x.parse_end <= y.start:
             return 3  # ignore y
-    return 1          # x intersects y
+    return 1  # x intersects y
 
 
 def make_tokens(tokens, start, end, string, fallback_token):
@@ -63,7 +65,7 @@ def make_tokens(tokens, start, end, string, fallback_token):
     prev_end = start
     for token in tokens:
         if token.start > prev_end:
-            t = fallback_token(string[prev_end:token.start])
+            t = fallback_token(string[prev_end : token.start])
             if t is not None:
                 result.append(t)
         t = token.make()
@@ -97,7 +99,13 @@ class ParseToken:
     def make(self):
         if not self.cls.parse_inner:
             return self.cls(self.match)
-        children = make_tokens(self.children, self.parse_start, self.parse_end, self.string, self.fallback_token)
+        children = make_tokens(
+            self.children,
+            self.parse_start,
+            self.parse_end,
+            self.string,
+            self.fallback_token,
+        )
         token = self.cls(self.match)
         token.children = children
         return token
@@ -106,7 +114,12 @@ class ParseToken:
         return self.start < other.start
 
     def __repr__(self):
-        pattern = '<ParseToken span=({},{}) parse_span=({},{}) cls={} children={}>'
-        return pattern.format(self.start, self.end,
-                              self.parse_start, self.parse_end,
-                              repr(self.cls.__name__), self.children)
+        pattern = "<ParseToken span=({},{}) parse_span=({},{}) cls={} children={}>"
+        return pattern.format(
+            self.start,
+            self.end,
+            self.parse_start,
+            self.parse_end,
+            repr(self.cls.__name__),
+            self.children,
+        )
