@@ -12,7 +12,7 @@ class FileWrapper:
 
     @property
     def lineno(self):
-        return self.start_line + self._index
+        return self.start_line + self._index + 1
 
     def __next__(self):
         if self._index + 1 < len(self.lines):
