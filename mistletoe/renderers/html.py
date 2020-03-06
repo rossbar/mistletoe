@@ -6,8 +6,8 @@ import re
 import sys
 from itertools import chain
 from urllib.parse import quote
-from mistletoe.block_token import HTMLBlock
-from mistletoe.span_token import HTMLSpan
+from mistletoe.block_tokens import HTMLBlock
+from mistletoe.span_tokens import HTMLSpan
 from mistletoe.renderers.base import BaseRenderer
 
 if sys.version_info < (3, 4):
@@ -39,7 +39,7 @@ class HTMLRenderer(BaseRenderer):
         html._charref = self._stdlib_charref
 
     def render_to_plain(self, token):
-        if hasattr(token, "children"):
+        if token.children is not None:
             inner = [self.render_to_plain(child) for child in token.children]
             return "".join(inner)
         return self.escape_html(token.content)

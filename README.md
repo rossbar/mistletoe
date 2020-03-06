@@ -286,7 +286,7 @@ and don't really look like chunky paragraphs. To write a new span-level
 token, all we need to do is make a subclass of `SpanToken`:
 
 ```python
-from mistletoe.span_token import SpanToken
+from mistletoe.base_elements import SpanToken
 
 class GithubWiki(SpanToken):
     pass
@@ -336,7 +336,7 @@ Lastly, the `SpanToken` constructors take a regex match object as its argument.
 We can simply store off the `target` attribute from `match_obj.group(2)`.
 
 ```python
-from mistletoe.span_token import SpanToken
+from mistletoe.base_elements import SpanToken
 
 class GithubWiki(SpanToken):
     pattern = re.compile(r"\[\[ *(.+?) *\| *(.+?) *\]\]")

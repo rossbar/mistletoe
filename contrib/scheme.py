@@ -2,18 +2,18 @@ from collections import ChainMap
 from functools import reduce
 import re
 
-from mistletoe import BaseRenderer, span_token, block_token
+from mistletoe import BaseRenderer, base_elements
 from span_tokenizer import tokenize_span
-from mistletoe.core_tokenizer import MatchObj
+from mistletoe.nested_tokenizer import MatchObj
 from mistletoe.parse_context import get_parse_context
 
 
-class Program(block_token.BlockToken):
+class Program(base_elements.BlockToken):
     def __init__(self, lines):
         self.children = tokenize_span("".join([line.strip() for line in lines]))
 
 
-class Expr(span_token.SpanToken):
+class Expr(base_elements.SpanToken):
     @classmethod
     def find(cls, string):
         matches = []
@@ -32,7 +32,7 @@ class Expr(span_token.SpanToken):
         return "<Expr {}>".format(self.children)
 
 
-class Number(span_token.SpanToken):
+class Number(base_elements.SpanToken):
     pattern = re.compile(r"(\d+)")
     parse_inner = False
 
@@ -43,7 +43,7 @@ class Number(span_token.SpanToken):
         return "<Number {}>".format(self.number)
 
 
-class Variable(span_token.SpanToken):
+class Variable(base_elements.SpanToken):
     pattern = re.compile(r"([^\s()]+)")
     parse_inner = False
 
@@ -54,7 +54,7 @@ class Variable(span_token.SpanToken):
         return "<Variable {!r}>".format(self.name)
 
 
-class Whitespace(span_token.SpanToken):
+class Whitespace(base_elements.SpanToken):
     parse_inner = False
 
     def __new__(self, _):

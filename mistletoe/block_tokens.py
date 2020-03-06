@@ -6,9 +6,9 @@ import re
 from itertools import zip_longest
 
 import mistletoe.block_tokenizer as tokenizer
-from mistletoe import span_token
+from mistletoe import span_tokens
 from mistletoe.span_tokenizer import tokenize_span
-from mistletoe.core_tokenizer import (
+from mistletoe.nested_tokenizer import (
     follows,
     shift_whitespace,
     whitespace,
@@ -16,6 +16,7 @@ from mistletoe.core_tokenizer import (
     normalize_label,
 )
 from mistletoe.parse_context import get_parse_context
+from mistletoe.base_elements import BlockToken
 
 
 """
@@ -34,66 +35,8 @@ __all__ = [
 ]
 
 
-class BlockToken(object):
-    """
-    Base class for block-level tokens. Recursively parse inner tokens.
-
-    Naming conventions:
-
-        * lines denotes a list of (possibly unparsed) input lines, and is
-          commonly used as the argument name for constructors.
-
-        * BlockToken.children is a list with all the inner tokens (thus if
-          a token has children attribute, it is not a leaf node; if a token
-          calls tokenize_span, it is the boundary between
-          span-level tokens and block-level tokens);
-
-        * BlockToken.start takes a line from the document as argument, and
-          returns a boolean representing whether that line marks the start
-          of the current token. Every subclass of BlockToken must define a
-          start function (see block_tokenizer.tokenize).
-
-        * BlockToken.read takes the rest of the lines in the ducment as an
-          iterator (including the start line), and consumes all the lines
-          that should be read into this token.
-
-          Default to stop at an empty line.
-
-          Note that BlockToken.read does not have to return a list of lines.
-          Because the return value of this function will be directly
-          passed into the token constructor, we can return any relevant
-          parsing information, sometimes even ready-made tokens,
-          into the constructor. See block_tokenizer.tokenize.
-
-          If BlockToken.read returns None, the read result is ignored,
-          but the token class is responsible for resetting the iterator
-          to a previous state. See block_tokenizer.FileWrapper.anchor,
-          block_tokenizer.FileWrapper.reset.
-
-    Attributes:
-        children (list): inner tokens.
-    """
-
-    def __init__(self, lines, tokenize_func):
-        self.children = tokenize_func(lines)
-
-    def __contains__(self, text):
-        return any(text in child for child in self.children)
-
-    @staticmethod
-    def read(lines):
-        line_buffer = [next(lines)]
-        for line in lines:
-            if line == "\n":
-                break
-            line_buffer.append(line)
-        return line_buffer
-
-
 class Document(BlockToken):
-    """
-    Document token.
-    """
+    """Document token."""
 
     def __init__(self, lines):
         if isinstance(lines, str):
@@ -317,13 +260,13 @@ class BlockCode(BlockToken):
     Indented code.
 
     Attributes:
-        children (list): contains a single span_token.RawText token.
+        children (list): contains a single span_tokens.RawText token.
         language (str): always the empty string.
     """
 
     def __init__(self, lines):
         self.language = ""
-        self.children = (span_token.RawText("".join(lines).strip("\n") + "\n"),)
+        self.children = (span_tokens.RawText("".join(lines).strip("\n") + "\n"),)
 
     @staticmethod
     def start(line):
@@ -363,7 +306,7 @@ class CodeFence(BlockToken):
     Boundary between span-level and block-level tokens.
 
     Attributes:
-        children (list): contains a single span_token.RawText token.
+        children (list): contains a single span_tokens.RawText token.
         language (str): language of code block (default to empty).
     """
 
@@ -372,8 +315,8 @@ class CodeFence(BlockToken):
 
     def __init__(self, match):
         lines, open_info = match
-        self.language = span_token.EscapeSequence.strip(open_info[2])
-        self.children = (span_token.RawText("".join(lines)),)
+        self.language = span_tokens.EscapeSequence.strip(open_info[2])
+        self.children = (span_tokens.RawText("".join(lines)),)
 
     @classmethod
     def start(cls, line):
@@ -839,8 +782,8 @@ class LinkDefinition(BlockToken):
     def append_link_definitions(matches):
         for key, dest, title in matches:
             key = normalize_label(key)
-            dest = span_token.EscapeSequence.strip(dest.strip())
-            title = span_token.EscapeSequence.strip(title)
+            dest = span_tokens.EscapeSequence.strip(dest.strip())
+            title = span_tokens.EscapeSequence.strip(title)
             link_definitions = get_parse_context().link_definitions
             if key not in link_definitions:
                 link_definitions[key] = dest, title
@@ -881,7 +824,7 @@ class HTMLBlock(BlockToken):
     multiblock = re.compile(r"<(script|pre|style)[ >\n]")
     predefined = re.compile(r"<\/?(.+?)(?:\/?>|[ \n])")
     custom_tag = re.compile(
-        r"(?:" + "|".join((span_token._open_tag, span_token._closing_tag)) + r")\s*$"
+        r"(?:" + "|".join((span_tokens._open_tag, span_tokens._closing_tag)) + r")\s*$"
     )
 
     def __init__(self, lines):
@@ -915,7 +858,7 @@ class HTMLBlock(BlockToken):
             return 5
         # rule 6: predefined tags (see html_token._tags), read until newline
         match_obj = cls.predefined.match(stripped)
-        if match_obj is not None and match_obj.group(1).casefold() in span_token._tags:
+        if match_obj is not None and match_obj.group(1).casefold() in span_tokens._tags:
             cls._end_cond = None
             return 6
         # rule 7: custom tags, read until newline

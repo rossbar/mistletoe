@@ -30,9 +30,9 @@ class TOCRenderer(HTMLRenderer):
     @property
     def toc(self):
         """
-        Returns table of contents as a block_token.List instance.
+        Returns table of contents as a block_tokens.List instance.
         """
-        from mistletoe.block_token import List
+        from mistletoe.block_tokens import List
 
         def get_indent(level):
             if self.omit_title:

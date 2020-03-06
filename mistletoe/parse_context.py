@@ -1,6 +1,6 @@
 """This module provides a container for global variables of a single parse.
 
-It uses the threading.local object to ensure that global variables
+It uses the `threading.local` object to ensure that global variables
 are not changed by different threads.
 """
 from copy import deepcopy
@@ -14,9 +14,9 @@ class ParseContext:
         """A class to contain context for a single parse.
 
         :param block_tokens: a list of block tokens to use during the parse.
-            If None the standard blocks will be used from `block_token.__all__`
+            If None the standard blocks will be used from `block_tokens.__all__`
         :param span_tokens: a list of span tokens to use during the parse.
-            If None the standard blocks will be used from `span_token.__all__`
+            If None the standard blocks will be used from `span_tokens.__all__`
         :param span_tokens: [description], defaults to None
         :param link_definitions: a dict of link definitons, obtained from `[def]: link`
         """
@@ -27,15 +27,15 @@ class ParseContext:
         if block_tokens is not None:
             self.block_tokens = block_tokens
         else:
-            from mistletoe import block_token
+            from mistletoe import block_tokens
 
-            self.block_tokens = tokens_from_module(block_token)
+            self.block_tokens = tokens_from_module(block_tokens)
         if span_tokens is not None:
             self.span_tokens = span_tokens
         else:
-            from mistletoe import span_token
+            from mistletoe import span_tokens
 
-            self.span_tokens = tokens_from_module(span_token)
+            self.span_tokens = tokens_from_module(span_tokens)
 
     def copy(self):
         return deepcopy(self)

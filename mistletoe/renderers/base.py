@@ -4,7 +4,7 @@ Base class for renderers.
 
 import re
 import sys
-from mistletoe import span_token
+from mistletoe import base_elements
 from mistletoe.parse_context import get_parse_context, set_parse_context
 
 
@@ -75,7 +75,7 @@ class BaseRenderer(object):
         self._extras = extras
         parse_context = get_parse_context(reset=True)
         for token in extras:
-            if issubclass(token, span_token.SpanToken):
+            if issubclass(token, base_elements.SpanToken):
                 # insert at position 1 (since backslash escape should also be 1st)
                 parse_context.span_tokens.insert(1, token)
             else:
