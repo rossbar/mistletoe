@@ -4,17 +4,18 @@ Built-in block-level token classes.
 
 import re
 from itertools import zip_longest
-from threading import local
 
 import mistletoe.block_tokenizer as tokenizer
 from mistletoe import span_token
-from mistletoe.core_tokens import (
+from mistletoe.span_tokenizer import tokenize_span
+from mistletoe.core_tokenizer import (
     follows,
     shift_whitespace,
     whitespace,
     is_control_char,
     normalize_label,
 )
+from mistletoe.parse_context import get_parse_context
 
 
 """
@@ -28,66 +29,9 @@ __all__ = [
     "ThematicBreak",
     "List",
     "Table",
-    "Footnote",
+    "LinkDefinition",
     "Paragraph",
 ]
-
-
-"""
-Stores a reference to the current document token.
-
-When parsing, footnote entries will be stored in the document by
-accessing this pointer.
-"""
-# TODO make thread local
-_root_node = None
-
-
-def tokenize(lines, start_line=0):
-    """
-    A wrapper around block_tokenizer.tokenize. Pass in all block-level
-    token constructors as arguments to block_tokenizer.tokenize.
-
-    Doing so (instead of importing block_token module in block_tokenizer)
-    avoids cyclic dependency issues, and allows for future injections of
-    custom token classes.
-
-    _token_types variable is at the bottom of this module.
-
-    See also: block_tokenizer.tokenize, span_token.tokenize_inner.
-    """
-    return tokenizer.tokenize(lines, _token_types.value, start_line)
-
-
-def add_token(token_cls, position=0):
-    """
-    Allows external manipulation of the parsing process.
-    This function is usually called in BaseRenderer.__enter__.
-
-    Arguments:
-        token_cls (SpanToken): token to be included in the parsing process.
-        position (int): the position for the token class to be inserted into.
-    """
-    _token_types.value.insert(position, token_cls)
-
-
-def remove_token(token_cls):
-    """
-    Allows external manipulation of the parsing process.
-    This function is usually called in BaseRenderer.__exit__.
-
-    Arguments:
-        token_cls (BlockToken): token to be removed from the parsing process.
-    """
-    _token_types.value.remove(token_cls)
-
-
-def reset_tokens():
-    """
-    Resets global _token_types to all token classes in __all__.
-    """
-    global _token_types
-    _token_types.value = [globals()[cls_name] for cls_name in __all__]
 
 
 class BlockToken(object):
@@ -101,7 +45,7 @@ class BlockToken(object):
 
         * BlockToken.children is a list with all the inner tokens (thus if
           a token has children attribute, it is not a leaf node; if a token
-          calls span_token.tokenize_inner, it is the boundary between
+          calls tokenize_span, it is the boundary between
           span-level tokens and block-level tokens);
 
         * BlockToken.start takes a line from the document as argument, and
@@ -155,13 +99,9 @@ class Document(BlockToken):
         if isinstance(lines, str):
             lines = lines.splitlines(keepends=True)
         lines = [line if line.endswith("\n") else "{}\n".format(line) for line in lines]
-        self.footnotes = {}
-        global _root_node
-        _root_node = self
-        span_token._root_node = self
-        self.children = tokenize(lines)
-        span_token._root_node = None
-        _root_node = None
+        self.link_definitions = {}
+        get_parse_context().link_definitions = self.link_definitions
+        self.children = tokenizer.tokenize_main(lines)
 
 
 class Heading(BlockToken):
@@ -180,7 +120,7 @@ class Heading(BlockToken):
 
     def __init__(self, match):
         self.level, content = match
-        super().__init__(content, span_token.tokenize_inner)
+        super().__init__(content, tokenize_span)
 
     @classmethod
     def start(cls, line):
@@ -209,7 +149,7 @@ class SetextHeading(BlockToken):
     def __init__(self, lines):
         self.level = 1 if lines.pop().lstrip().startswith("=") else 2
         content = "\n".join([line.strip() for line in lines])
-        super().__init__(content, span_token.tokenize_inner)
+        super().__init__(content, tokenize_span)
 
     @classmethod
     def start(cls, line):
@@ -280,10 +220,10 @@ class Quote(BlockToken):
             next(lines)
             next_line = lines.peek()
 
-        # block level tokens are parsed here, so that footnotes
+        # block level tokens are parsed here, so that link_definitions
         # in quotes can be recognized before span-level tokenizing.
         Paragraph.parse_setext = False
-        parse_buffer = tokenizer.tokenize_block(line_buffer, _token_types.value)
+        parse_buffer = tokenizer.tokenize_block(line_buffer)
         Paragraph.parse_setext = True
         return parse_buffer
 
@@ -320,7 +260,7 @@ class Paragraph(BlockToken):
 
     def __init__(self, lines):
         content = "".join([line.lstrip() for line in lines]).strip()
-        super().__init__(content, span_token.tokenize_inner)
+        super().__init__(content, tokenize_span)
 
     @staticmethod
     def start(line):
@@ -591,7 +531,7 @@ class ListItem(BlockToken):
             line_buffer.append(line[prepend:])
         next_line = lines.peek()
         if empty_first_line and next_line is not None and next_line.strip() == "":
-            parse_buffer = tokenizer.tokenize_block([next(lines)], _token_types.value)
+            parse_buffer = tokenizer.tokenize_block([next(lines)])
             next_line = lines.peek()
             if next_line is not None:
                 marker_info = cls.parse_marker(next_line)
@@ -638,9 +578,9 @@ class ListItem(BlockToken):
             newline = newline + 1 if next_line.strip() == "" else 0
             next_line = lines.peek()
 
-        # block-level tokens are parsed here, so that footnotes can be
+        # block-level tokens are parsed here, so that link_definitions can be
         # recognized before span-level parsing.
-        parse_buffer = tokenizer.tokenize_block(line_buffer, _token_types.value)
+        parse_buffer = tokenizer.tokenize_block(line_buffer)
         return (parse_buffer, prepend, leader), next_marker
 
 
@@ -736,15 +676,15 @@ class TableCell(BlockToken):
 
     def __init__(self, content, align=None):
         self.align = align
-        super().__init__(content, span_token.tokenize_inner)
+        super().__init__(content, tokenize_span)
 
 
-class Footnote(BlockToken):
+class LinkDefinition(BlockToken):
     """
-    Footnote token.
+    LinkDefinition token.
 
-    The constructor returns None, because the footnote information
-    is stored in Footnote.read.
+    The constructor returns None, because the link definition information
+    is stored in `LinkDefinition.read`.
     """
 
     label_pattern = re.compile(r"[ \n]{0,3}\[(.+?)\]", re.DOTALL)
@@ -772,7 +712,7 @@ class Footnote(BlockToken):
                 break
             offset, match = match_info
             matches.append(match)
-        cls.append_footnotes(matches, _root_node)
+        cls.append_link_definitions(matches)
         return matches or None
 
     @classmethod
@@ -896,13 +836,14 @@ class Footnote(BlockToken):
         return None
 
     @staticmethod
-    def append_footnotes(matches, root):
+    def append_link_definitions(matches):
         for key, dest, title in matches:
             key = normalize_label(key)
             dest = span_token.EscapeSequence.strip(dest.strip())
             title = span_token.EscapeSequence.strip(title)
-            if key not in root.footnotes:
-                root.footnotes[key] = dest, title
+            link_definitions = get_parse_context().link_definitions
+            if key not in link_definitions:
+                link_definitions[key] = dest, title
 
     @staticmethod
     def backtrack(lines, string, offset):
@@ -997,8 +938,3 @@ class HTMLBlock(BlockToken):
                 line_buffer.pop()
                 break
         return line_buffer
-
-
-_token_types = local()
-_token_types.value = []
-reset_tokens()

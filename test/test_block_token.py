@@ -1,21 +1,22 @@
 import unittest
 from unittest.mock import patch, call
 from mistletoe import block_token, span_token
-from mistletoe.block_tokenizer import FileWrapper
+from mistletoe.parse_context import get_parse_context
+from mistletoe.block_tokenizer import FileWrapper, tokenize_main
 
 
 class TestToken(unittest.TestCase):
     def setUp(self):
         self.addCleanup(
-            lambda: span_token._token_types.value.__setitem__(-1, span_token.RawText)
+            lambda: get_parse_context().span_tokens.__setitem__(-1, span_token.RawText)
         )
         patcher = patch("mistletoe.span_token.RawText")
         self.mock = patcher.start()
-        span_token._token_types.value[-1] = self.mock
+        get_parse_context().span_tokens[-1] = self.mock
         self.addCleanup(patcher.stop)
 
     def _test_match(self, token_cls, lines, arg, **kwargs):
-        token = next(iter(block_token.tokenize(lines)))
+        token = next(iter(tokenize_main(lines)))
         self.assertIsInstance(token, token_cls)
         self._test_token(token, arg, **kwargs)
 
@@ -43,7 +44,7 @@ class TestATXHeading(TestToken):
 
     def test_heading_in_paragraph(self):
         lines = ["foo\n", "# heading\n", "bar\n"]
-        token1, token2, token3 = block_token.tokenize(lines)
+        token1, token2, token3 = tokenize_main(lines)
         self.assertIsInstance(token1, block_token.Paragraph)
         self.assertIsInstance(token2, block_token.Heading)
         self.assertIsInstance(token3, block_token.Paragraph)
@@ -57,7 +58,7 @@ class TestSetextHeading(TestToken):
 
     def test_next(self):
         lines = ["some\n", "heading\n", "---\n", "\n", "foobar\n"]
-        tokens = iter(block_token.tokenize(lines))
+        tokens = iter(tokenize_main(lines))
         self.assertIsInstance(next(tokens), block_token.SetextHeading)
         self.assertIsInstance(next(tokens), block_token.Paragraph)
         self.mock.assert_has_calls([call("some"), call("heading"), call("foobar")])
@@ -68,12 +69,12 @@ class TestSetextHeading(TestToken):
 class TestQuote(unittest.TestCase):
     def test_match(self):
         with patch("mistletoe.block_token.Paragraph"):
-            token = next(iter(block_token.tokenize(["> line 1\n", "> line 2\n"])))
+            token = next(iter(tokenize_main(["> line 1\n", "> line 2\n"])))
             self.assertIsInstance(token, block_token.Quote)
 
     def test_lazy_continuation(self):
         with patch("mistletoe.block_token.Paragraph"):
-            token = next(iter(block_token.tokenize(["> line 1\n", "line 2\n"])))
+            token = next(iter(tokenize_main(["> line 1\n", "line 2\n"])))
             self.assertIsInstance(token, block_token.Quote)
 
 
@@ -125,7 +126,7 @@ class TestParagraph(TestToken):
     def test_read(self):
         lines = ["this\n", "```\n", "is some\n", "```\n", "code\n"]
         try:
-            token1, token2, token3 = block_token.tokenize(lines)
+            token1, token2, token3 = tokenize_main(lines)
         except ValueError as e:
             raise AssertionError("Token number mismatch.") from e
         self.assertIsInstance(token1, block_token.Paragraph)
@@ -151,21 +152,21 @@ class TestListItem(unittest.TestCase):
 
     def test_tokenize(self):
         lines = [" -    foo\n", "   bar\n", "\n", "          baz\n"]
-        token1, token2 = next(iter(block_token.tokenize(lines))).children[0].children
+        token1, token2 = next(iter(tokenize_main(lines))).children[0].children
         self.assertIsInstance(token1, block_token.Paragraph)
         self.assertTrue("foo" in token1)
         self.assertIsInstance(token2, block_token.BlockCode)
 
     def test_sublist(self):
         lines = ["- foo\n", "  - bar\n"]
-        token1, token2 = block_token.tokenize(lines)[0].children[0].children
+        token1, token2 = tokenize_main(lines)[0].children[0].children
         self.assertIsInstance(token1, block_token.Paragraph)
         self.assertIsInstance(token2, block_token.List)
 
     def test_deep_list(self):
         lines = ["- foo\n", "  - bar\n", "    - baz\n"]
         FileWrapper(lines)
-        ptoken, ltoken = block_token.tokenize(lines)[0].children[0].children
+        ptoken, ltoken = tokenize_main(lines)[0].children[0].children
         self.assertIsInstance(ptoken, block_token.Paragraph)
         self.assertIsInstance(ltoken, block_token.List)
         self.assertTrue("foo" in ptoken)
@@ -178,20 +179,20 @@ class TestListItem(unittest.TestCase):
     def test_loose_list(self):
         lines = ["- foo\n", "  ~~~\n", "  bar\n", "  \n", "  baz\n" "  ~~~\n"]
         FileWrapper(lines)
-        list_item = block_token.tokenize(lines)[0].children[0]
+        list_item = tokenize_main(lines)[0].children[0]
         self.assertEqual(list_item.loose, False)
 
     def test_tight_list(self):
         lines = ["- foo\n", "\n", "# bar\n"]
         FileWrapper(lines)
-        list_item = block_token.tokenize(lines)[0].children[0]
+        list_item = tokenize_main(lines)[0].children[0]
         self.assertEqual(list_item.loose, False)
 
 
 class TestList(unittest.TestCase):
     def test_different_markers(self):
         lines = ["- foo\n", "* bar\n", "1. baz\n", "2) spam\n"]
-        l1, l2, l3, l4 = block_token.tokenize(lines)
+        l1, l2, l3, l4 = tokenize_main(lines)
         self.assertIsInstance(l1, block_token.List)
         self.assertTrue("foo" in l1)
         self.assertIsInstance(l2, block_token.List)
@@ -203,7 +204,7 @@ class TestList(unittest.TestCase):
 
     def test_sublist(self):
         lines = ["- foo\n", "  + bar\n"]
-        (token,) = block_token.tokenize(lines)
+        (token,) = tokenize_main(lines)
         self.assertIsInstance(token, block_token.List)
 
 
@@ -228,7 +229,7 @@ class TestTable(unittest.TestCase):
             "| more 1 | more 2 | more 3 |\n",
         ]
         with patch("mistletoe.block_token.TableRow") as mock:
-            token = next(iter(block_token.tokenize(lines)))
+            token = next(iter(tokenize_main(lines)))
             self.assertIsInstance(token, block_token.Table)
             self.assertTrue(hasattr(token, "header"))
             self.assertEqual(token.column_align, [None, None, None])
@@ -239,7 +240,7 @@ class TestTable(unittest.TestCase):
     def test_easy_table(self):
         lines = ["header 1 | header 2\n", "    ---: | :---\n", "  cell 1 | cell 2\n"]
         with patch("mistletoe.block_token.TableRow") as mock:
-            (token,) = block_token.tokenize(lines)
+            (token,) = tokenize_main(lines)
             self.assertIsInstance(token, block_token.Table)
             self.assertTrue(hasattr(token, "header"))
             self.assertEqual(token.column_align, [1, None])
@@ -249,7 +250,7 @@ class TestTable(unittest.TestCase):
 
     def test_not_easy_table(self):
         lines = ["not header 1 | not header 2\n", "foo | bar\n"]
-        (token,) = block_token.tokenize(lines)
+        (token,) = tokenize_main(lines)
         self.assertIsInstance(token, block_token.Paragraph)
 
 
@@ -285,21 +286,21 @@ class TestTableCell(TestToken):
         self._test_token(token, "cell 2", align=None)
 
 
-class TestFootnote(unittest.TestCase):
+class TestLinkDefinition(unittest.TestCase):
     def test_store(self):
         lines = ["[key 1]: value1\n", "[key 2]: value2\n"]
         token = block_token.Document(lines)
         self.assertEqual(
-            token.footnotes, {"key 1": ("value1", ""), "key 2": ("value2", "")}
+            token.link_definitions, {"key 1": ("value1", ""), "key 2": ("value2", "")}
         )
 
 
 class TestDocument(unittest.TestCase):
-    def test_store_footnote(self):
+    def test_store_link_definition(self):
         lines = ["[key 1]: value1\n", "[key 2]: value2\n"]
         document = block_token.Document(lines)
-        self.assertEqual(document.footnotes["key 1"], ("value1", ""))
-        self.assertEqual(document.footnotes["key 2"], ("value2", ""))
+        self.assertEqual(document.link_definitions["key 1"], ("value1", ""))
+        self.assertEqual(document.link_definitions["key 2"], ("value2", ""))
 
     def test_auto_splitlines(self):
         lines = "some\ncontinual\nlines\n"
@@ -311,7 +312,7 @@ class TestDocument(unittest.TestCase):
 class TestThematicBreak(unittest.TestCase):
     def test_match(self):
         def test_case(line):
-            token = next(iter(block_token.tokenize([line])))
+            token = next(iter(tokenize_main([line])))
             self.assertIsInstance(token, block_token.ThematicBreak)
 
         cases = ["---\n", "* * *\n", "_    _    _\n"]

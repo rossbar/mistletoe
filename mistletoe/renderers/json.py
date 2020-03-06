@@ -7,13 +7,16 @@ from mistletoe.renderers.base import BaseRenderer
 
 
 class JsonRenderer(BaseRenderer):
-    def render(self, token):
+    def render(self, token, as_string=True):
         """
         Returns the JSON string representation of the AST.
 
         Overrides super().render. Delegates the logic to ast_to_json.
         """
-        return json.dumps(ast_to_json(token), indent=2) + "\n"
+        dct = ast_to_json(token)
+        if as_string:
+            return json.dumps(dct, indent=2) + "\n"
+        return dct
 
     def __getattr__(self, name):
         return lambda token: ""

@@ -155,7 +155,7 @@ class LaTeXRenderer(BaseRenderer):
             "{inner}"
             "\\end{{document}}\n"
         )
-        self.footnotes.update(token.footnotes)
+        self.link_definitions.update(token.link_definitions)
         return template.format(
             inner=self.render_inner(token), packages=self.render_packages()
         )

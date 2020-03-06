@@ -7,7 +7,7 @@ children:
     title: ''
     type: Link
   type: Paragraph
-footnotes:
+link_definitions:
   baz:
   - spam
   - ''

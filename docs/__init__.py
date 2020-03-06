@@ -24,11 +24,11 @@ class DocRenderer(HTMLRenderer):
 
     def render_document(self, token, name="README.md"):
         pattern = "<html>{}<body>{}</body></html>"
-        self.footnotes.update(token.footnotes)
+        self.link_definitions.update(token.link_definitions)
         for filename, new_link in getattr(self, "files", {}).items():
-            for k, v in self.footnotes.items():
+            for k, v in self.link_definitions.items():
                 if v == filename:
-                    self.footnotes[k] = new_link
+                    self.link_definitions[k] = new_link
         subtitle = " | {}".format(
             "version " + __version__
             if name == "README.md"

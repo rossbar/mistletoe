@@ -1,6 +1,7 @@
 """
 Block-level tokenizer for mistletoe.
 """
+from mistletoe.parse_context import get_parse_context
 
 
 class FileWrapper:
@@ -42,7 +43,7 @@ class FileWrapper:
             self._index -= 1
 
 
-def tokenize(iterable, token_types, start_line=0):
+def tokenize_main(iterable, token_types=None, start_line=0):
     """
     Searches for token_types in iterable.
 
@@ -53,16 +54,22 @@ def tokenize(iterable, token_types, start_line=0):
     Returns:
         block-level token instances.
     """
-    return make_tokens(tokenize_block(iterable, token_types, start_line))
+    if token_types is None:
+        token_types = get_parse_context().block_tokens
+    return make_tokens(
+        tokenize_block(iterable, token_types=token_types, start_line=start_line)
+    )
 
 
-def tokenize_block(iterable, token_types, start_line=0):
+def tokenize_block(iterable, token_types=None, start_line=0):
     """
     Returns a list of pairs (token_type, read_result).
 
-    Footnotes are parsed here, but span-level parsing has not
+    link_definitions are parsed here, but span-level parsing has not
     started yet.
     """
+    if token_types is None:
+        token_types = get_parse_context().block_tokens
     lines = FileWrapper(iterable, start_line)
     parse_buffer = ParseBuffer()
     line = lines.peek()
@@ -85,7 +92,7 @@ def make_tokens(parse_buffer):
     Takes a list of pairs (token_type, read_result) and
     applies token_type(read_result).
 
-    Footnotes are already parsed before this point,
+    link_definitions are already parsed before this point,
     and span-level parsing is started here.
     """
     tokens = []

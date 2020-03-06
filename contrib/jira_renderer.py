@@ -192,7 +192,7 @@ class JIRARenderer(BaseRenderer):
         return token.content
 
     def render_document(self, token):
-        self.footnotes.update(token.footnotes)
+        self.link_definitions.update(token.link_definitions)
         return self.render_inner(token)
 
 
