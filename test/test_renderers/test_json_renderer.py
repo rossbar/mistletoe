@@ -10,7 +10,7 @@ def test_basic(data_regression):
 
 
 def test_link_references(data_regression):
-    doc = Document(["[bar][baz]\n", "\n", "[baz]: spam\n"])
+    doc = Document(["[bar][baz]\n", "\n", "[baz]: spam\n"], store_definitions=True)
     output = ast_to_json(doc)
     data_regression.check(output)
 

@@ -1,13 +1,11 @@
 """
 Built-in block-level token classes.
 """
-
-import re
 from itertools import zip_longest
+import re
 
 import mistletoe.block_tokenizer as tokenizer
 from mistletoe import span_tokens
-from mistletoe.span_tokenizer import tokenize_span
 from mistletoe.nested_tokenizer import (
     follows,
     shift_whitespace,
@@ -16,7 +14,7 @@ from mistletoe.nested_tokenizer import (
     normalize_label,
 )
 from mistletoe.parse_context import get_parse_context
-from mistletoe.base_elements import BlockToken
+from mistletoe.base_elements import BlockToken, SpanContainer
 
 
 """
@@ -36,15 +34,25 @@ __all__ = [
 
 
 class Document(BlockToken):
-    """Document token."""
+    """Document container.
 
-    def __init__(self, lines):
+    Besides the document, it contains metadata.
+    """
+
+    def __init__(self, lines, start_line: int = 0, store_definitions=False):
+        """Constructor
+
+        :param lines: Lines or string to parse
+        :param start_line: The initial line (used for nested parsing)
+        """
         if isinstance(lines, str):
             lines = lines.splitlines(keepends=True)
         lines = [line if line.endswith("\n") else "{}\n".format(line) for line in lines]
         self.link_definitions = {}
         get_parse_context().link_definitions = self.link_definitions
-        self.children = tokenizer.tokenize_main(lines)
+        self.children = tokenizer.tokenize_main(
+            lines, start_line=start_line, store_definitions=store_definitions
+        )
 
 
 class Heading(BlockToken):
@@ -61,9 +69,9 @@ class Heading(BlockToken):
     level = 0
     content = ""
 
-    def __init__(self, match):
-        self.level, content = match
-        super().__init__(content, tokenize_span)
+    def __init__(self, children, level):
+        self.children = children
+        self.level = level
 
     @classmethod
     def start(cls, line):
@@ -77,22 +85,24 @@ class Heading(BlockToken):
         return True
 
     @classmethod
-    def read(cls, lines):
+    def read(cls, lines, expand_spans=False):
         next(lines)
-        return cls.level, cls.content
+        children = SpanContainer(cls.content)
+        if expand_spans:
+            children = children.expand()
+        return cls(**{"level": cls.level, "children": children})
 
 
 class SetextHeading(BlockToken):
     """
     Setext headings.
 
-    Not included in the parsing process, but called by Paragraph.__new__.
+    Not included in the parsing process, but called by Paragraph.read.
     """
 
-    def __init__(self, lines):
-        self.level = 1 if lines.pop().lstrip().startswith("=") else 2
-        content = "\n".join([line.strip() for line in lines])
-        super().__init__(content, tokenize_span)
+    def __init__(self, children, level):
+        self.level = level
+        self.children = children
 
     @classmethod
     def start(cls, line):
@@ -108,9 +118,8 @@ class Quote(BlockToken):
     Quote token. (["> # heading\\n", "> paragraph\\n"])
     """
 
-    def __init__(self, parse_buffer):
-        # span-level tokenizing happens here.
-        self.children = tokenizer.make_tokens(parse_buffer)
+    def __init__(self, children):
+        self.children = children
 
     @staticmethod
     def start(line):
@@ -166,9 +175,11 @@ class Quote(BlockToken):
         # block level tokens are parsed here, so that link_definitions
         # in quotes can be recognized before span-level tokenizing.
         Paragraph.parse_setext = False
-        parse_buffer = tokenizer.tokenize_block(line_buffer)
-        Paragraph.parse_setext = True
-        return parse_buffer
+        try:
+            child_tokens = tokenizer.tokenize_block(line_buffer)
+        finally:
+            Paragraph.parse_setext = True
+        return cls(**{"children": child_tokens})
 
     @staticmethod
     def convert_leading_tabs(string):
@@ -195,22 +206,19 @@ class Paragraph(BlockToken):
     setext_pattern = re.compile(r" {0,3}(=|-)+ *$")
     parse_setext = True  # can be disabled by Quote
 
-    def __new__(cls, lines):
-        if not isinstance(lines, list):
-            # setext heading token, return directly
-            return lines
-        return super().__new__(cls)
-
-    def __init__(self, lines):
-        content = "".join([line.lstrip() for line in lines]).strip()
-        super().__init__(content, tokenize_span)
+    def __init__(self, children):
+        self.children = children
 
     @staticmethod
     def start(line):
         return line.strip() != ""
 
     @classmethod
-    def read(cls, lines):
+    def is_setext_heading(cls, line):
+        return cls.setext_pattern.match(line)
+
+    @classmethod
+    def read(cls, lines, expand_spans=False):
         line_buffer = [next(lines)]
         next_line = lines.peek()
         while (
@@ -239,7 +247,13 @@ class Paragraph(BlockToken):
             # check if we see a setext underline
             if cls.parse_setext and cls.is_setext_heading(next_line):
                 line_buffer.append(next(lines))
-                return SetextHeading(line_buffer)
+                level = 1 if line_buffer.pop().lstrip().startswith("=") else 2
+                children = SpanContainer(
+                    "\n".join([line.strip() for line in line_buffer])
+                )
+                if expand_spans:
+                    children = children.expand()
+                return SetextHeading(**{"children": children, "level": level})
 
             # check if we have a ThematicBreak (has to be after setext)
             if ThematicBreak.start(next_line):
@@ -248,11 +262,12 @@ class Paragraph(BlockToken):
             # no other tokens, we're good
             line_buffer.append(next(lines))
             next_line = lines.peek()
-        return line_buffer
 
-    @classmethod
-    def is_setext_heading(cls, line):
-        return cls.setext_pattern.match(line)
+        content = "".join([line.lstrip() for line in line_buffer]).strip()
+        children = SpanContainer(content)
+        if expand_spans:
+            children = children.expand()
+        return cls(**{"children": children})
 
 
 class BlockCode(BlockToken):
@@ -264,9 +279,9 @@ class BlockCode(BlockToken):
         language (str): always the empty string.
     """
 
-    def __init__(self, lines):
-        self.language = ""
-        self.children = (span_tokens.RawText("".join(lines).strip("\n") + "\n"),)
+    def __init__(self, children, language):
+        self.children = children
+        self.language = language
 
     @staticmethod
     def start(line):
@@ -283,7 +298,10 @@ class BlockCode(BlockToken):
                 lines.backstep()
                 break
             line_buffer.append(cls.strip(line))
-        return line_buffer
+
+        children = (span_tokens.RawText("".join(line_buffer).strip("\n") + "\n"),)
+
+        return cls(**{"children": children, "language": ""})
 
     @staticmethod
     def strip(string):
@@ -313,10 +331,9 @@ class CodeFence(BlockToken):
     pattern = re.compile(r"( {0,3})((?:`|~){3,}) *(\S*)")
     _open_info = None
 
-    def __init__(self, match):
-        lines, open_info = match
-        self.language = span_tokens.EscapeSequence.strip(open_info[2])
-        self.children = (span_tokens.RawText("".join(lines)),)
+    def __init__(self, children, language):
+        self.children = children
+        self.language = language
 
     @classmethod
     def start(cls, line):
@@ -345,7 +362,11 @@ class CodeFence(BlockToken):
             if diff > cls._open_info[0]:
                 stripped_line = " " * (diff - cls._open_info[0]) + stripped_line
             line_buffer.append(stripped_line)
-        return line_buffer, cls._open_info
+
+        language = span_tokens.EscapeSequence.strip(cls._open_info[2])
+        children = (span_tokens.RawText("".join(line_buffer)),)
+
+        return cls(**{"children": children, "language": language})
 
 
 class List(BlockToken):
@@ -360,13 +381,10 @@ class List(BlockToken):
 
     pattern = re.compile(r" {0,3}(?:\d{0,9}[.)]|[+\-*])(?:[ \t]*$|[ \t]+)")
 
-    def __init__(self, matches):
-        self.children = [ListItem(*match) for match in matches]
-        self.loose = any(item.loose for item in self.children)
-        leader = self.children[0].leader
-        self.start = None
-        if len(leader) != 1:
-            self.start = int(leader[:-1])
+    def __init__(self, children, loose, start):
+        self.children = children
+        self.loose = loose
+        self.start = start
 
     @classmethod
     def start(cls, line):
@@ -376,27 +394,33 @@ class List(BlockToken):
     def read(cls, lines):
         leader = None
         next_marker = None
-        matches = []
+        children = []
         while True:
-            output, next_marker = ListItem.read(lines, next_marker)
-            item_leader = output[2]
+            item = ListItem.read(lines, next_marker)
+            next_marker = item.next_marker
+            item_leader = item.leader
             if leader is None:
                 leader = item_leader
             elif not cls.same_marker_type(leader, item_leader):
                 lines.reset()
                 break
-            matches.append(output)
+            children.append(item)
             if next_marker is None:
                 break
 
-        if matches:
+        if children:
             # Only consider the last list item loose if there's more than one element
-            last_parse_buffer = matches[-1][0]
+            last_parse_buffer = children[-1]
             last_parse_buffer.loose = (
-                len(last_parse_buffer) > 1 and last_parse_buffer.loose
+                len(last_parse_buffer.children) > 1 and last_parse_buffer.loose
             )
 
-        return matches
+        loose = any(item.loose for item in children)
+        leader = children[0].leader
+        start = None
+        if len(leader) != 1:
+            start = int(leader[:-1])
+        return cls(**{"children": children, "loose": loose, "start": start})
 
     @staticmethod
     def same_marker_type(leader, other):
@@ -414,11 +438,12 @@ class ListItem(BlockToken):
 
     pattern = re.compile(r"\s*(\d{0,9}[.)]|[+\-*])(\s*$|\s+)")
 
-    def __init__(self, parse_buffer, prepend, leader):
+    def __init__(self, children, prepend, leader, loose, next_marker):
         self.leader = leader
         self.prepend = prepend
-        self.children = tokenizer.make_tokens(parse_buffer)
-        self.loose = parse_buffer.loose
+        self.children = children
+        self.loose = loose
+        self.next_marker = next_marker
 
     @staticmethod
     def in_continuation(line, prepend):
@@ -474,13 +499,21 @@ class ListItem(BlockToken):
             line_buffer.append(line[prepend:])
         next_line = lines.peek()
         if empty_first_line and next_line is not None and next_line.strip() == "":
-            parse_buffer = tokenizer.tokenize_block([next(lines)])
+            child_tokens = tokenizer.tokenize_block([next(lines)])
             next_line = lines.peek()
             if next_line is not None:
                 marker_info = cls.parse_marker(next_line)
                 if marker_info is not None:
                     next_marker = marker_info
-            return (parse_buffer, prepend, leader), next_marker
+            return cls(
+                **{
+                    "children": child_tokens,
+                    "loose": child_tokens.loose,
+                    "prepend": prepend,
+                    "leader": leader,
+                    "next_marker": next_marker,
+                }
+            )
 
         # loop
         newline = 0
@@ -523,8 +556,16 @@ class ListItem(BlockToken):
 
         # block-level tokens are parsed here, so that link_definitions can be
         # recognized before span-level parsing.
-        parse_buffer = tokenizer.tokenize_block(line_buffer)
-        return (parse_buffer, prepend, leader), next_marker
+        child_tokens = tokenizer.tokenize_block(line_buffer)
+        return cls(
+            **{
+                "children": child_tokens,
+                "loose": child_tokens.loose,
+                "prepend": prepend,
+                "leader": leader,
+                "next_marker": next_marker,
+            }
+        )
 
 
 class Table(BlockToken):
@@ -537,16 +578,10 @@ class Table(BlockToken):
         children (list): inner tokens (TableRows).
     """
 
-    def __init__(self, lines):
-        if "---" in lines[1]:
-            self.column_align = [
-                self.parse_align(column) for column in self.split_delimiter(lines[1])
-            ]
-            self.header = TableRow(lines[0], self.column_align)
-            self.children = [TableRow(line, self.column_align) for line in lines[2:]]
-        else:
-            self.column_align = [None]
-            self.children = [TableRow(line) for line in lines]
+    def __init__(self, children, column_align, header):
+        self.column_align = column_align
+        self.header = header
+        self.children = children
 
     @staticmethod
     def split_delimiter(delimiter):
@@ -577,8 +612,8 @@ class Table(BlockToken):
     def start(line):
         return "|" in line
 
-    @staticmethod
-    def read(lines):
+    @classmethod
+    def read(cls, lines):
         lines.anchor()
         line_buffer = [next(lines)]
         while lines.peek() is not None and "|" in lines.peek():
@@ -586,7 +621,22 @@ class Table(BlockToken):
         if len(line_buffer) < 2 or "---" not in line_buffer[1]:
             lines.reset()
             return None
-        return line_buffer
+
+        lines = line_buffer
+        if "---" in lines[1]:
+            column_align = [
+                cls.parse_align(column) for column in cls.split_delimiter(lines[1])
+            ]
+            header = TableRow.read(lines[0], column_align)
+            children = [TableRow.read(line, column_align) for line in lines[2:]]
+        else:
+            column_align = [None]
+            header = None
+            children = [TableRow.read(line)[1] for line in lines]
+
+        return cls(
+            **{"children": children, "column_align": column_align, "header": header}
+        )
 
 
 class TableRow(BlockToken):
@@ -596,13 +646,19 @@ class TableRow(BlockToken):
     Should only be called by Table.__init__().
     """
 
-    def __init__(self, line, row_align=None):
-        self.row_align = row_align or [None]
+    def __init__(self, children, row_align):
+        self.row_align = row_align
+        self.children = children
+
+    @classmethod
+    def read(cls, line, row_align=None):
+        row_align = row_align or [None]
         cells = filter(None, line.strip().split("|"))
-        self.children = [
-            TableCell(cell.strip() if cell else "", align)
-            for cell, align in zip_longest(cells, self.row_align)
+        children = [
+            TableCell.read(cell.strip() if cell else "", align)
+            for cell, align in zip_longest(cells, row_align)
         ]
+        return cls(**{"children": children, "row_align": row_align})
 
 
 class TableCell(BlockToken):
@@ -617,9 +673,16 @@ class TableCell(BlockToken):
         children (list): inner (span-)tokens.
     """
 
-    def __init__(self, content, align=None):
+    def __init__(self, children, align):
         self.align = align
-        super().__init__(content, tokenize_span)
+        self.children = children
+
+    @classmethod
+    def read(cls, content, align=None, expand_spans=False):
+        children = SpanContainer(content)
+        if expand_spans:
+            children = children.expand()
+        return cls(**{"children": children, "align": align})
 
 
 class LinkDefinition(BlockToken):
@@ -632,8 +695,8 @@ class LinkDefinition(BlockToken):
 
     label_pattern = re.compile(r"[ \n]{0,3}\[(.+?)\]", re.DOTALL)
 
-    def __new__(cls, _):
-        return None
+    def __init__(self):
+        pass
 
     @classmethod
     def start(cls, line):
@@ -656,7 +719,7 @@ class LinkDefinition(BlockToken):
             offset, match = match_info
             matches.append(match)
         cls.append_link_definitions(matches)
-        return matches or None
+        return cls() if matches else None
 
     @classmethod
     def match_reference(cls, lines, string, offset):
@@ -800,16 +863,17 @@ class ThematicBreak(BlockToken):
 
     pattern = re.compile(r" {0,3}(?:([-_*])\s*?)(?:\1\s*?){2,}$")
 
-    def __init__(self, _):
+    def __init__(self):
         pass
 
     @classmethod
     def start(cls, line):
         return cls.pattern.match(line)
 
-    @staticmethod
-    def read(lines):
-        return [next(lines)]
+    @classmethod
+    def read(cls, lines):
+        next(lines)
+        return cls()
 
 
 class HTMLBlock(BlockToken):
@@ -827,8 +891,8 @@ class HTMLBlock(BlockToken):
         r"(?:" + "|".join((span_tokens._open_tag, span_tokens._closing_tag)) + r")\s*$"
     )
 
-    def __init__(self, lines):
-        self.content = "".join(lines).rstrip("\n")
+    def __init__(self, content):
+        self.content = content
 
     @classmethod
     def start(cls, line):
@@ -880,4 +944,4 @@ class HTMLBlock(BlockToken):
             elif line.strip() == "":
                 line_buffer.pop()
                 break
-        return line_buffer
+        return cls(**{"content": "".join(line_buffer).rstrip("\n")})
