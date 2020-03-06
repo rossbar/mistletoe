@@ -129,6 +129,17 @@ class Quote(BlockToken):
         return stripped.startswith(">")
 
     @classmethod
+    def transition(cls, next_line):
+        return (
+            next_line is None
+            or next_line.strip() == ""
+            or Heading.start(next_line)
+            or CodeFence.start(next_line)
+            or ThematicBreak.start(next_line)
+            or List.start(next_line)
+        )
+
+    @classmethod
     def read(cls, lines):
         # first line
         start_line = lines.lineno + 1
@@ -144,14 +155,7 @@ class Quote(BlockToken):
 
         # loop
         next_line = lines.peek()
-        while (
-            next_line is not None
-            and next_line.strip() != ""
-            and not Heading.start(next_line)
-            and not CodeFence.start(next_line)
-            and not ThematicBreak.start(next_line)
-            and not List.start(next_line)
-        ):
+        while not cls.transition(next_line):
             stripped = cls.convert_leading_tabs(next_line.lstrip())
             prepend = 0
             if stripped[0] == ">":
@@ -220,18 +224,21 @@ class Paragraph(BlockToken):
         return cls._setext_pattern.match(line)
 
     @classmethod
+    def transition(cls, next_line):
+        return (
+            next_line is None
+            or next_line.strip() == ""
+            or Heading.start(next_line)
+            or CodeFence.start(next_line)
+            or Quote.start(next_line)
+        )
+
+    @classmethod
     def read(cls, lines, expand_spans=False):
         line_buffer = [next(lines)]
         start_line = lines.lineno
         next_line = lines.peek()
-        while (
-            next_line is not None
-            and next_line.strip() != ""
-            and not Heading.start(next_line)
-            and not CodeFence.start(next_line)
-            and not Quote.start(next_line)
-        ):
-
+        while not cls.transition(next_line):
             # check if next_line starts List
             list_pair = ListItem.parse_marker(next_line)
             if len(next_line) - len(next_line.lstrip()) < 4 and list_pair is not None:
@@ -461,12 +468,12 @@ class ListItem(BlockToken):
         return line.strip() == "" or len(line) - len(line.lstrip()) >= prepend
 
     @staticmethod
-    def other_token(line):
+    def transition(next_line):
         return (
-            Heading.start(line)
-            or Quote.start(line)
-            or CodeFence.start(line)
-            or ThematicBreak.start(line)
+            Heading.start(next_line)
+            or Quote.start(next_line)
+            or CodeFence.start(next_line)
+            or ThematicBreak.start(next_line)
         )
 
     @classmethod
@@ -542,7 +549,7 @@ class ListItem(BlockToken):
             # not in continuation
             if not cls.in_continuation(next_line, prepend):
                 # directly followed by another token
-                if cls.other_token(next_line):
+                if cls.transition(next_line):
                     if newline:
                         lines.backstep()
                         del line_buffer[-newline:]
