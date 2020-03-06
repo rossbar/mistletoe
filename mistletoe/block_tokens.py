@@ -3,6 +3,10 @@ Built-in block-level token classes.
 """
 from itertools import zip_longest
 import re
+from typing import Optional
+
+import attr
+from attr.validators import instance_of
 
 import mistletoe.block_tokenizer as tokenizer
 from mistletoe import span_tokens
@@ -55,23 +59,17 @@ class Document(BlockToken):
         )
 
 
+@attr.s(slots=True, kw_only=True)
 class Heading(BlockToken):
-    """
-    Heading token. (["### some heading ###\\n"])
-    Boundary between span-level and block-level tokens.
+    """Heading token. (["### some heading ###\\n"])
 
-    Attributes:
-        level (int): heading level.
-        children (list): inner tokens.
+    Boundary between span-level and block-level tokens.
     """
+
+    level: int = attr.ib()
+    children: list = attr.ib(repr=lambda c: str(len(c)))
 
     pattern = re.compile(r" {0,3}(#{1,6})(?:\n|\s+?(.*?)(?:\n|\s+?#+\s*?$))")
-    level = 0
-    content = ""
-
-    def __init__(self, children, level):
-        self.children = children
-        self.level = level
 
     @classmethod
     def start(cls, line):
@@ -93,16 +91,15 @@ class Heading(BlockToken):
         return cls(**{"level": cls.level, "children": children})
 
 
+@attr.s(slots=True, kw_only=True)
 class SetextHeading(BlockToken):
-    """
-    Setext headings.
+    """Setext headings.
 
-    Not included in the parsing process, but called by Paragraph.read.
+    Not included in the parsing process, but returned by Paragraph.read.
     """
 
-    def __init__(self, children, level):
-        self.level = level
-        self.children = children
+    level: int = attr.ib()
+    children: list = attr.ib(repr=lambda c: str(len(c)))
 
     @classmethod
     def start(cls, line):
@@ -113,13 +110,11 @@ class SetextHeading(BlockToken):
         raise NotImplementedError()
 
 
+@attr.s(slots=True, kw_only=True)
 class Quote(BlockToken):
-    """
-    Quote token. (["> # heading\\n", "> paragraph\\n"])
-    """
+    """Quote token. (["> # heading\\n", "> paragraph\\n"])."""
 
-    def __init__(self, children):
-        self.children = children
+    children: list = attr.ib(repr=lambda c: str(len(c)))
 
     @staticmethod
     def start(line):
@@ -197,17 +192,17 @@ class Quote(BlockToken):
         return ">" + " " * count + string[i:]
 
 
+@attr.s(slots=True, kw_only=True)
 class Paragraph(BlockToken):
-    """
-    Paragraph token. (["some\\n", "continuous\\n", "lines\\n"])
+    """Paragraph token. (["some\\n", "continuous\\n", "lines\\n"])
+
     Boundary between span-level and block-level tokens.
     """
 
-    setext_pattern = re.compile(r" {0,3}(=|-)+ *$")
-    parse_setext = True  # can be disabled by Quote
+    children: list = attr.ib(repr=lambda c: str(len(c)))
 
-    def __init__(self, children):
-        self.children = children
+    _setext_pattern = re.compile(r" {0,3}(=|-)+ *$")
+    parse_setext = True  # can be disabled by Quote
 
     @staticmethod
     def start(line):
@@ -215,7 +210,7 @@ class Paragraph(BlockToken):
 
     @classmethod
     def is_setext_heading(cls, line):
-        return cls.setext_pattern.match(line)
+        return cls._setext_pattern.match(line)
 
     @classmethod
     def read(cls, lines, expand_spans=False):
@@ -270,18 +265,12 @@ class Paragraph(BlockToken):
         return cls(**{"children": children})
 
 
+@attr.s(slots=True, kw_only=True)
 class BlockCode(BlockToken):
-    """
-    Indented code.
+    """Indented code."""
 
-    Attributes:
-        children (list): contains a single span_tokens.RawText token.
-        language (str): always the empty string.
-    """
-
-    def __init__(self, children, language):
-        self.children = children
-        self.language = language
+    children: list = attr.ib(repr=lambda c: str(len(c)))
+    language: str = attr.ib(default="")
 
     @staticmethod
     def start(line):
@@ -318,22 +307,18 @@ class BlockCode(BlockToken):
         return string
 
 
+@attr.s(slots=True, kw_only=True)
 class CodeFence(BlockToken):
-    """
-    Code fence. (["```sh\\n", "rm -rf /", ..., "```"])
-    Boundary between span-level and block-level tokens.
+    """Code fence. (["```sh\\n", "rm -rf /", ..., "```"])
 
-    Attributes:
-        children (list): contains a single span_tokens.RawText token.
-        language (str): language of code block (default to empty).
+    Boundary between span-level and block-level tokens.
     """
+
+    children: list = attr.ib(repr=lambda c: str(len(c)))
+    language: str = attr.ib(default="")
 
     pattern = re.compile(r"( {0,3})((?:`|~){3,}) *(\S*)")
     _open_info = None
-
-    def __init__(self, children, language):
-        self.children = children
-        self.language = language
 
     @classmethod
     def start(cls, line):
@@ -369,26 +354,25 @@ class CodeFence(BlockToken):
         return cls(**{"children": children, "language": language})
 
 
+@attr.s(slots=True, kw_only=True)
 class List(BlockToken):
-    """
-    List token.
+    """List token.
 
     Attributes:
         children (list): a list of ListItem tokens.
         loose (bool): whether the list is loose.
-        start (NoneType or int): None if unordered, starting number if ordered.
+        leader (NoneType or int): None if unordered, starting number if ordered.
     """
 
-    pattern = re.compile(r" {0,3}(?:\d{0,9}[.)]|[+\-*])(?:[ \t]*$|[ \t]+)")
+    children: list = attr.ib(repr=lambda c: str(len(c)))
+    loose: bool = attr.ib()
+    leader: Optional[int] = attr.ib()
 
-    def __init__(self, children, loose, start):
-        self.children = children
-        self.loose = loose
-        self.start = start
+    _pattern = re.compile(r" {0,3}(?:\d{0,9}[.)]|[+\-*])(?:[ \t]*$|[ \t]+)")
 
     @classmethod
     def start(cls, line):
-        return cls.pattern.match(line)
+        return cls._pattern.match(line)
 
     @classmethod
     def read(cls, lines):
@@ -420,7 +404,7 @@ class List(BlockToken):
         start = None
         if len(leader) != 1:
             start = int(leader[:-1])
-        return cls(**{"children": children, "loose": loose, "start": start})
+        return cls(**{"children": children, "loose": loose, "leader": start})
 
     @staticmethod
     def same_marker_type(leader, other):
@@ -431,19 +415,20 @@ class List(BlockToken):
         )
 
 
+@attr.s(slots=True, kw_only=True)
 class ListItem(BlockToken):
-    """
-    List items. Not included in the parsing process, but called by List.
+    """List items.
+
+    Not included in the parsing process, but called by List.
     """
 
-    pattern = re.compile(r"\s*(\d{0,9}[.)]|[+\-*])(\s*$|\s+)")
+    children: list = attr.ib(repr=lambda c: str(len(c)))
+    loose: bool = attr.ib()
+    leader = attr.ib()
+    prepend = attr.ib()
+    next_marker = attr.ib()
 
-    def __init__(self, children, prepend, leader, loose, next_marker):
-        self.leader = leader
-        self.prepend = prepend
-        self.children = children
-        self.loose = loose
-        self.next_marker = next_marker
+    _pattern = re.compile(r"\s*(\d{0,9}[.)]|[+\-*])(\s*$|\s+)")
 
     @staticmethod
     def in_continuation(line, prepend):
@@ -461,9 +446,9 @@ class ListItem(BlockToken):
     @classmethod
     def parse_marker(cls, line):
         """
-        Returns a pair (prepend, leader) iff the line has a valid leader.
+        Returns a pair (prepend, leader) if the line has a valid leader.
         """
-        match_obj = cls.pattern.match(line)
+        match_obj = cls._pattern.match(line)
         if match_obj is None:
             return None  # no valid leader
         leader = match_obj.group(1)
@@ -568,20 +553,20 @@ class ListItem(BlockToken):
         )
 
 
+@attr.s(slots=True, kw_only=True)
 class Table(BlockToken):
     """
     Table token.
 
     Attributes:
-        has_header (bool): whether table has header row.
+        header (bool): whether table has header row.
         column_align (list): align options for each column (default to [None]).
         children (list): inner tokens (TableRows).
     """
 
-    def __init__(self, children, column_align, header):
-        self.column_align = column_align
-        self.header = header
-        self.children = children
+    children: list = attr.ib(repr=lambda c: str(len(c)))
+    header: bool = attr.ib()
+    column_align: list = attr.ib()
 
     @staticmethod
     def split_delimiter(delimiter):
@@ -639,12 +624,12 @@ class Table(BlockToken):
         )
 
 
+@attr.s(slots=True, kw_only=True)
 class TableRow(BlockToken):
-    """
-    Table row token.
+    """Table row token."""
 
-    Should only be called by Table.__init__().
-    """
+    children: list = attr.ib(repr=lambda c: str(len(c)))
+    row_align: list = attr.ib()
 
     def __init__(self, children, row_align):
         self.row_align = row_align
@@ -661,17 +646,19 @@ class TableRow(BlockToken):
         return cls(**{"children": children, "row_align": row_align})
 
 
+@attr.s(slots=True, kw_only=True)
 class TableCell(BlockToken):
-    """
-    Table cell token.
-    Boundary between span-level and block-level tokens.
+    """Table cell token.
 
-    Should only be called by TableRow.__init__().
+    Boundary between span-level and block-level tokens.
 
     Attributes:
         align (bool): align option for current cell (default to None).
         children (list): inner (span-)tokens.
     """
+
+    children: list = attr.ib(repr=lambda c: str(len(c)))
+    align: Optional[int] = attr.ib()
 
     def __init__(self, children, align):
         self.align = align
@@ -685,6 +672,7 @@ class TableCell(BlockToken):
         return cls(**{"children": children, "align": align})
 
 
+@attr.s(slots=True, kw_only=True)
 class LinkDefinition(BlockToken):
     """
     LinkDefinition token.
@@ -694,9 +682,6 @@ class LinkDefinition(BlockToken):
     """
 
     label_pattern = re.compile(r"[ \n]{0,3}\[(.+?)\]", re.DOTALL)
-
-    def __init__(self):
-        pass
 
     @classmethod
     def start(cls, line):
@@ -856,19 +841,17 @@ class LinkDefinition(BlockToken):
         lines._index -= string[offset + 1 :].count("\n")
 
 
+@attr.s(slots=True, kw_only=True)
 class ThematicBreak(BlockToken):
     """
     Thematic break token (a.k.a. horizontal rule.)
     """
 
-    pattern = re.compile(r" {0,3}(?:([-_*])\s*?)(?:\1\s*?){2,}$")
-
-    def __init__(self):
-        pass
+    _pattern = re.compile(r" {0,3}(?:([-_*])\s*?)(?:\1\s*?){2,}$")
 
     @classmethod
     def start(cls, line):
-        return cls.pattern.match(line)
+        return cls._pattern.match(line)
 
     @classmethod
     def read(cls, lines):
@@ -876,6 +859,7 @@ class ThematicBreak(BlockToken):
         return cls()
 
 
+@attr.s(slots=True, kw_only=True)
 class HTMLBlock(BlockToken):
     """
     Block-level HTML tokens.
@@ -884,15 +868,14 @@ class HTMLBlock(BlockToken):
         content (str): literal strings rendered as-is.
     """
 
+    content: str = attr.ib(validator=instance_of(str), repr=False)
+
     _end_cond = None
     multiblock = re.compile(r"<(script|pre|style)[ >\n]")
     predefined = re.compile(r"<\/?(.+?)(?:\/?>|[ \n])")
     custom_tag = re.compile(
         r"(?:" + "|".join((span_tokens._open_tag, span_tokens._closing_tag)) + r")\s*$"
     )
-
-    def __init__(self, content):
-        self.content = content
 
     @classmethod
     def start(cls, line):

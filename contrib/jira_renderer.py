@@ -126,7 +126,7 @@ class JIRARenderer(BaseRenderer):
 
     def render_inner(self, token):
         if isinstance(token, block_tokens.List):
-            if token.start:
+            if token.leader:
                 self.listTokens.append("#")
             else:
                 self.listTokens.append("*")

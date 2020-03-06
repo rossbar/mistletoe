@@ -89,7 +89,7 @@ class LaTeXRenderer(BaseRenderer):
     def render_list(self, token):
         self.packages["listings"] = []
         template = "\\begin{{{tag}}}\n{inner}\\end{{{tag}}}\n"
-        tag = "enumerate" if token.start is not None else "itemize"
+        tag = "enumerate" if token.leader is not None else "itemize"
         inner = self.render_inner(token)
         return template.format(tag=tag, inner=inner)
 
