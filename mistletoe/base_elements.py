@@ -18,7 +18,7 @@ class Token:
             return ""
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Return the name of the element."""
         return type(self).__name__
 
@@ -35,7 +35,8 @@ class Token:
             info.append("children={}".format(len(self.children)))
         return "{}({})".format(self.name, ",".join(info))
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        """Convert instatiated attributes to a dict"""
         try:
             return attr.asdict(self)
         except attr.exceptions.NotAnAttrsClassError:

@@ -4,16 +4,16 @@ children:
     type: RawText
   level: 1
   position:
-  - 1
-  - 2
+  - 5
+  - 6
   type: SetextHeading
 - children:
   - content: Atx Header
     type: RawText
   level: 1
   position:
-  - 4
-  - 4
+  - 8
+  - 8
   type: Heading
 - children:
   - children:
@@ -28,8 +28,8 @@ children:
   - content: <www.google.com>
     type: RawText
   position:
-  - 6
-  - 7
+  - 10
+  - 11
   type: Paragraph
 - children:
   - children:
@@ -37,8 +37,8 @@ children:
       - content: unordered list
         type: RawText
       position:
-      - 9
-      - 9
+      - 13
+      - 13
       type: Paragraph
     leader: '-'
     loose: false
@@ -46,15 +46,15 @@ children:
     - 3
     - '1.'
     position:
-    - 8
-    - 10
+    - 12
+    - 14
     prepend: 2
     type: ListItem
-  leader: null
   loose: false
   position:
-  - 8
-  - 10
+  - 12
+  - 14
+  start_at: null
   type: List
 - children:
   - children:
@@ -62,22 +62,22 @@ children:
       - content: ordered list
         type: RawText
       position:
-      - 11
-      - 11
+      - 15
+      - 15
       type: Paragraph
     leader: '1.'
     loose: false
     next_marker: null
     position:
-    - 10
-    - 11
+    - 14
+    - 15
     prepend: 3
     type: ListItem
-  leader: 1
   loose: false
   position:
-  - 10
-  - 11
+  - 14
+  - 15
+  start_at: 1
   type: List
 - children:
   - children:
@@ -88,12 +88,12 @@ children:
         type: RawText
       type: Emphasis
     position:
-    - 14
-    - 14
+    - 18
+    - 18
     type: Paragraph
   position:
-  - 13
-  - 13
+  - 17
+  - 17
   type: Quote
 - children:
   - children:
@@ -103,12 +103,12 @@ children:
     title: xyz
     type: Link
   position:
-  - 15
-  - 15
+  - 19
+  - 19
   type: Paragraph
 - position:
-  - 17
-  - 17
+  - 21
+  - 21
   type: LinkDefinition
 - children:
   - content: 'code = 1
@@ -117,8 +117,8 @@ children:
     type: RawText
   language: python
   position:
-  - 19
-  - 21
+  - 23
+  - 25
   type: CodeFence
 - children:
   - content: 'block
@@ -129,12 +129,12 @@ children:
     type: RawText
   language: ''
   position:
-  - 23
-  - 24
+  - 27
+  - 28
   type: BlockCode
 - position:
-  - 26
-  - 26
+  - 30
+  - 30
   type: ThematicBreak
 - children:
   - children:
@@ -143,20 +143,20 @@ children:
       - content: '1'
         type: RawText
       position:
-      - 29
-      - 29
+      - 33
+      - 33
       type: TableCell
     - align: 1
       children:
       - content: '2'
         type: RawText
       position:
-      - 29
-      - 29
+      - 33
+      - 33
       type: TableCell
     position:
-    - 29
-    - 29
+    - 33
+    - 33
     row_align:
     - null
     - 1
@@ -171,28 +171,35 @@ children:
       - content: a
         type: RawText
       position:
-      - 27
-      - 27
+      - 31
+      - 31
       type: TableCell
     - align: 1
       children:
       - content: b
         type: RawText
       position:
-      - 27
-      - 27
+      - 31
+      - 31
       type: TableCell
     position:
-    - 27
-    - 27
+    - 31
+    - 31
     row_align:
     - null
     - 1
     type: TableRow
   position:
-  - 27
-  - 30
+  - 31
+  - 34
   type: Table
+front_matter:
+  content: 'a: 1
+
+    '
+  position:
+  - 0
+  - 3
 link_definitions:
   ref:
   - abc

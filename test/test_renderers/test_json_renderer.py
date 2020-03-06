@@ -9,6 +9,10 @@ def test_basic(data_regression):
     doc = Document.read(
         dedent(
             """\
+    ---
+    a: 1
+    ---
+
     Setext Header
     ==============
 
@@ -43,6 +47,7 @@ def test_basic(data_regression):
     """
         ),
         store_definitions=True,
+        front_matter=True,
     )
     output = ast_to_json(doc)
     data_regression.check(output)
@@ -60,6 +65,7 @@ def test_extra_tokens():
     """
     output = {
         "type": "Document",
+        "front_matter": None,
         "link_definitions": {},
         "children": [
             {
@@ -71,6 +77,7 @@ def test_extra_tokens():
     }
     output_math = {
         "type": "Document",
+        "front_matter": None,
         "link_definitions": {},
         "children": [
             {

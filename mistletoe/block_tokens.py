@@ -4,9 +4,9 @@ Built-in block-level token classes.
 from itertools import zip_longest
 import re
 from typing import Optional, Tuple
+from typing import List as ListType
 
 import attr
-from attr.validators import instance_of
 
 import mistletoe.block_tokenizer as tokenizer
 from mistletoe import span_tokens
@@ -18,7 +18,7 @@ from mistletoe.nested_tokenizer import (
     normalize_label,
 )
 from mistletoe.parse_context import get_parse_context
-from mistletoe.base_elements import BlockToken, SpanContainer
+from mistletoe.base_elements import Token, BlockToken, SpanContainer
 
 
 """
@@ -41,12 +41,24 @@ __all__ = [
 class Document(BlockToken):
     """Document container."""
 
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    link_definitions: dict = attr.ib(repr=lambda d: str(len(d)))
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    link_definitions: dict = attr.ib(
+        repr=lambda d: str(len(d)), metadata={"doc": "Mapping of keys to (url, title)"}
+    )
+    front_matter: Optional["FrontMatter"] = attr.ib(
+        default=None, metadata={"doc": "Front matter YAML block"}
+    )
 
     @classmethod
     def read(
-        cls, lines, start_line: int = 0, reset_definitions=True, store_definitions=False
+        cls,
+        lines,
+        start_line: int = 0,
+        reset_definitions=True,
+        store_definitions=False,
+        front_matter=False,
     ):
         """Read a document
 
@@ -54,6 +66,8 @@ class Document(BlockToken):
         :param start_line: The initial line (used for nested parsing)
         :param reset_definitions: remove any previously stored link_definitions
         :param store_definitions: store LinkDefinitions or ignore them
+        :param front_matter: search for an initial YAML block front matter block
+            (note this is not strictly CommonMark compliant)
         """
         if isinstance(lines, str):
             lines = lines.splitlines(keepends=True)
@@ -61,12 +75,63 @@ class Document(BlockToken):
         # reset link definitions
         if reset_definitions:
             get_parse_context().link_definitions = {}
+
+        front_matter_token = None
+        if front_matter and lines and lines[0].startswith("---"):
+            front_matter_token = FrontMatter.read(lines)
+            start_line += front_matter_token.position[1]
+            lines = lines[front_matter_token.position[1] :]
+
         children = tokenizer.tokenize_main(
             lines, start_line=start_line, store_definitions=store_definitions
         )
         return cls(
-            children=children, link_definitions=get_parse_context().link_definitions
+            children=children,
+            front_matter=front_matter_token,
+            link_definitions=get_parse_context().link_definitions,
         )
+
+
+@attr.s(slots=True, kw_only=True)
+class FrontMatter(BlockToken):
+    """Front matter YAML block.
+
+    ::
+
+        ---
+        a: b
+        c: d
+        ---
+
+    NOTE: The content of the block should be valid YAML,
+    but its parsing (and hence syntax testing) is deferred to the renderers.
+    This is so that, given 'bad' YAML,
+    the rest of the of document will still be parsed,
+    and then the renderers can apply there own error reporting.
+
+    Not included in the parsing process, but called by `Document.read`.
+    """
+
+    content: str = attr.ib(
+        repr=False, metadata={"doc": "Source text (should be valid YAML)"}
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
+
+    @classmethod
+    def read(cls, lines):
+        assert lines and lines[0].startswith("---")
+        end_line = None
+        for i, line in enumerate(lines[1:]):
+            if line.startswith("---"):
+                end_line = i + 2
+                break
+        # TODO raise/report error if closing block not found
+        if end_line is None:
+            end_line = len(lines)
+
+        return cls(content="".join(lines[1 : end_line - 1]), position=(0, end_line))
 
 
 @attr.s(slots=True, kw_only=True)
@@ -76,9 +141,13 @@ class Heading(BlockToken):
     Boundary between span-level and block-level tokens.
     """
 
-    level: int = attr.ib()
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    position: Tuple[int, int] = attr.ib()
+    level: int = attr.ib(metadata={"doc": "Heading level"})
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     pattern = re.compile(r" {0,3}(#{1,6})(?:\n|\s+?(.*?)(?:\n|\s+?#+\s*?$))")
 
@@ -108,12 +177,16 @@ class Heading(BlockToken):
 class SetextHeading(BlockToken):
     """Setext headings.
 
-    Not included in the parsing process, but returned by Paragraph.read.
+    Not included in the parsing process, but returned by `Paragraph.read`.
     """
 
-    level: int = attr.ib()
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    position: Tuple[int, int] = attr.ib()
+    level: int = attr.ib(metadata={"doc": "Heading level"})
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     @classmethod
     def start(cls, line):
@@ -126,10 +199,14 @@ class SetextHeading(BlockToken):
 
 @attr.s(slots=True, kw_only=True)
 class Quote(BlockToken):
-    """Quote token. (["> # heading\\n", "> paragraph\\n"])."""
+    """Quote token. (`["> # heading\\n", "> paragraph\\n"]`)."""
 
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    position: Tuple[int, int] = attr.ib()
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     @staticmethod
     def start(line):
@@ -214,13 +291,17 @@ class Quote(BlockToken):
 
 @attr.s(slots=True, kw_only=True)
 class Paragraph(BlockToken):
-    """Paragraph token. (["some\\n", "continuous\\n", "lines\\n"])
+    """Paragraph token. (`["some\\n", "continuous\\n", "lines\\n"]`)
 
     Boundary between span-level and block-level tokens.
     """
 
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    position: Tuple[int, int] = attr.ib()
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     _setext_pattern = re.compile(r" {0,3}(=|-)+ *$")
     parse_setext = True  # can be disabled by Quote
@@ -296,9 +377,15 @@ class Paragraph(BlockToken):
 class BlockCode(BlockToken):
     """Indented code."""
 
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    language: str = attr.ib(default="")
-    position: Tuple[int, int] = attr.ib()
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    language: str = attr.ib(
+        default="", metadata={"doc": "The code language (for sytax highlighting)"}
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     @staticmethod
     def start(line):
@@ -345,9 +432,15 @@ class CodeFence(BlockToken):
     Boundary between span-level and block-level tokens.
     """
 
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    language: str = attr.ib(default="")
-    position: Tuple[int, int] = attr.ib()
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    language: str = attr.ib(
+        default="", metadata={"doc": "The code language (for sytax highlighting)"}
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     pattern = re.compile(r"( {0,3})((?:`|~){3,}) *(\S*)")
     _open_info = None
@@ -391,18 +484,20 @@ class CodeFence(BlockToken):
 
 @attr.s(slots=True, kw_only=True)
 class List(BlockToken):
-    """List token.
+    """List token (unordered or ordered)"""
 
-    Attributes:
-        children (list): a list of ListItem tokens.
-        loose (bool): whether the list is loose.
-        leader (NoneType or int): None if unordered, starting number if ordered.
-    """
-
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    loose: bool = attr.ib()
-    leader: Optional[int] = attr.ib()
-    position: Tuple[int, int] = attr.ib()
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    loose: bool = attr.ib(
+        metadata={"doc": "Whether list items are separated by blank lines"}
+    )
+    start_at: Optional[int] = attr.ib(
+        metadata={"doc": "None if unordered, starting number if ordered."}
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     _pattern = re.compile(r" {0,3}(?:\d{0,9}[.)]|[+\-*])(?:[ \t]*$|[ \t]+)")
 
@@ -444,7 +539,7 @@ class List(BlockToken):
         return cls(
             children=children,
             loose=loose,
-            leader=start,
+            start_at=start,
             position=(start_line, lines.lineno),
         )
 
@@ -464,12 +559,18 @@ class ListItem(BlockToken):
     Not included in the parsing process, but called by List.
     """
 
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    loose: bool = attr.ib()
-    leader = attr.ib()
-    prepend = attr.ib()
-    next_marker = attr.ib()
-    position: Tuple[int, int] = attr.ib()
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    loose: bool = attr.ib(
+        metadata={"doc": "Whether list items are separated by blank lines"}
+    )
+    leader: str = attr.ib(metadata={"doc": "The prefix number or bullet point."})
+    prepend = attr.ib(metadata={"doc": ""})
+    next_marker = attr.ib(metadata={"doc": ""})
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     _pattern = re.compile(r"\s*(\d{0,9}[.)]|[+\-*])(\s*$|\s+)")
 
@@ -598,19 +699,20 @@ class ListItem(BlockToken):
 
 @attr.s(slots=True, kw_only=True)
 class Table(BlockToken):
-    """
-    Table token.
+    """Table token."""
 
-    Attributes:
-        header : header row.
-        column_align (list): align options for each column (default to [None]).
-        children (list): inner tokens (TableRows).
-    """
-
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    header = attr.ib()
-    column_align: list = attr.ib()
-    position: Tuple[int, int] = attr.ib()
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    header: Optional["TableRow"] = attr.ib(metadata={"doc": "The header row"})
+    column_align: list = attr.ib(
+        metadata={
+            "doc": "align options for columns (left=None (default), center=0, right=1)"
+        }
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     @staticmethod
     def split_delimiter(delimiter):
@@ -681,9 +783,17 @@ class Table(BlockToken):
 class TableRow(BlockToken):
     """Table row token."""
 
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    row_align: list = attr.ib()
-    position: Tuple[int, int] = attr.ib()
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    row_align: list = attr.ib(
+        metadata={
+            "doc": "align options for columns (left=None (default), center=0, right=1)"
+        }
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     @classmethod
     def read(cls, line, row_align=None, lineno=0):
@@ -707,9 +817,17 @@ class TableCell(BlockToken):
         children (list): inner (span-)tokens.
     """
 
-    children: list = attr.ib(repr=lambda c: str(len(c)))
-    align: Optional[int] = attr.ib()
-    position: Tuple[int, int] = attr.ib()
+    children: ListType[Token] = attr.ib(
+        repr=lambda c: str(len(c)), metadata={"doc": "Child tokens list"}
+    )
+    align: Optional[int] = attr.ib(
+        metadata={
+            "doc": "align options for the cell (left=None (default), center=0, right=1)"
+        }
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     @classmethod
     def read(cls, content, align=None, expand_spans=False, lineno=0):
@@ -721,14 +839,11 @@ class TableCell(BlockToken):
 
 @attr.s(slots=True, kw_only=True)
 class LinkDefinition(BlockToken):
-    """
-    LinkDefinition token.
+    """LinkDefinition token: `[ref]: url "title"`"""
 
-    The constructor returns None, because the link definition information
-    is stored in `LinkDefinition.read`.
-    """
-
-    position: Tuple[int, int] = attr.ib()
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     label_pattern = re.compile(r"[ \n]{0,3}\[(.+?)\]", re.DOTALL)
 
@@ -893,11 +1008,11 @@ class LinkDefinition(BlockToken):
 
 @attr.s(slots=True, kw_only=True)
 class ThematicBreak(BlockToken):
-    """
-    Thematic break token (a.k.a. horizontal rule.)
-    """
+    """Thematic break token (a.k.a. horizontal rule.)"""
 
-    position: Tuple[int, int] = attr.ib()
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     _pattern = re.compile(r" {0,3}(?:([-_*])\s*?)(?:\1\s*?){2,}$")
 
@@ -913,15 +1028,14 @@ class ThematicBreak(BlockToken):
 
 @attr.s(slots=True, kw_only=True)
 class HTMLBlock(BlockToken):
-    """
-    Block-level HTML tokens.
+    """Block-level HTML token."""
 
-    Attributes:
-        content (str): literal strings rendered as-is.
-    """
-
-    content: str = attr.ib(validator=instance_of(str), repr=False)
-    position: Tuple[int, int] = attr.ib()
+    content: str = attr.ib(
+        repr=False, metadata={"doc": "literal strings rendered as-is"}
+    )
+    position: Tuple[int, int] = attr.ib(
+        metadata={"doc": "Line position in source text (start, end)"}
+    )
 
     _end_cond = None
     multiblock = re.compile(r"<(script|pre|style)[ >\n]")
