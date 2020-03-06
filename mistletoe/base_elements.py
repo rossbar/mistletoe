@@ -60,7 +60,7 @@ class Token:
         if include_self:
             yield WalkItem(self, None, current_depth)
         next_children = [(self, c) for c in self.children or []]
-        if getattr(self, "header", None):
+        if self.name == "Table" and getattr(self, "header", None) is not None:
             # table headers row
             next_children.append((self, self.header))
         while next_children and (depth is None or current_depth > depth):
@@ -70,7 +70,7 @@ class Token:
                 if tokens is None or child.name in tokens:
                     yield WalkItem(child, parent, current_depth)
                 new_children.extend([(child, c) for c in child.children or []])
-                if getattr(child, "header", None):
+                if self.child == "Table" and getattr(child, "header", None) is not None:
                     # table headers row
                     new_children.append((child, child.header))
 
