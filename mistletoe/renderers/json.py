@@ -3,23 +3,23 @@ Abstract syntax tree renderer for mistletoe.
 """
 
 import json
-from mistletoe.base_renderer import BaseRenderer
+from mistletoe.renderers.base import BaseRenderer
 
 
-class ASTRenderer(BaseRenderer):
+class JsonRenderer(BaseRenderer):
     def render(self, token):
         """
-        Returns the string representation of the AST.
+        Returns the JSON string representation of the AST.
 
-        Overrides super().render. Delegates the logic to get_ast.
+        Overrides super().render. Delegates the logic to ast_to_json.
         """
-        return json.dumps(get_ast(token), indent=2) + "\n"
+        return json.dumps(ast_to_json(token), indent=2) + "\n"
 
     def __getattr__(self, name):
         return lambda token: ""
 
 
-def get_ast(token):
+def ast_to_json(token):
     """
     Recursively unrolls token attributes into dictionaries (token.children
     into lists).
@@ -37,7 +37,7 @@ def get_ast(token):
     node["type"] = token.__class__.__name__
     node.update(token.__dict__)
     if "header" in node:
-        node["header"] = get_ast(node["header"])
+        node["header"] = ast_to_json(node["header"])
     if "children" in node:
-        node["children"] = [get_ast(child) for child in node["children"]]
+        node["children"] = [ast_to_json(child) for child in node["children"]]
     return node

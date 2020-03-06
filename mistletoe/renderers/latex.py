@@ -4,7 +4,7 @@ LaTeX renderer for mistletoe.
 
 from itertools import chain
 import mistletoe.latex_token as latex_token
-from mistletoe.base_renderer import BaseRenderer
+from mistletoe.renderers.base import BaseRenderer
 
 
 class LaTeXRenderer(BaseRenderer):

@@ -24,7 +24,7 @@
 import html
 from itertools import chain
 from mistletoe import block_token, span_token
-from mistletoe.base_renderer import BaseRenderer
+from mistletoe.renderers.base import BaseRenderer
 
 
 class JIRARenderer(BaseRenderer):

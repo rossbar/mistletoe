@@ -29,7 +29,7 @@ class BaseRenderer(object):
             >>> with SomeRenderer() as renderer:
             ...     rendered = renderer.render(Document(fin))
 
-        See mistletoe.html_renderer for an implementation example.
+        See mistletoe.renderers.html for an implementation example.
 
     Naming conventions:
         *   The keys of self.render_map should exactly match the class

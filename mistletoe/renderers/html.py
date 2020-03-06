@@ -8,7 +8,7 @@ from itertools import chain
 from urllib.parse import quote
 from mistletoe.block_token import HTMLBlock
 from mistletoe.span_token import HTMLSpan
-from mistletoe.base_renderer import BaseRenderer
+from mistletoe.renderers.base import BaseRenderer
 
 if sys.version_info < (3, 4):
     from mistletoe import _html as html
@@ -17,11 +17,7 @@ else:
 
 
 class HTMLRenderer(BaseRenderer):
-    """
-    HTML renderer class.
-
-    See mistletoe.base_renderer module for more info.
-    """
+    """HTML renderer class."""
 
     def __init__(self, *extras):
         """

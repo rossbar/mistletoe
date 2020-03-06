@@ -4,7 +4,7 @@ import os
 import pytest
 
 from mistletoe import Document
-from mistletoe.html_renderer import HTMLRenderer
+from mistletoe.renderers.html import HTMLRenderer
 
 with open(os.path.join(os.path.dirname(__file__), "commonmark.json"), "r") as fin:
     tests = json.load(fin)
