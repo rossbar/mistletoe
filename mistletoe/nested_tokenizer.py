@@ -1,6 +1,7 @@
 """Tokenize nested span tokens."""
 import re
 from threading import local
+from mistletoe.parse_context import get_parse_context
 
 
 whitespace = {" ", "\t", "\n", "\x0b", "\x0c", "\r"}
@@ -76,7 +77,7 @@ _code_matches = local()
 _code_matches.value = []
 
 
-def find_nested_tokenizer(string, link_defs):
+def find_nested_tokenizer(string):
     delimiters = []
     matches = []
     escaped = False
@@ -112,7 +113,7 @@ def find_nested_tokenizer(string, link_defs):
             elif c == "!":
                 in_image = True
             elif c == "]":
-                i = find_link_image(string, i, delimiters, matches, link_defs)
+                i = find_link_image(string, i, delimiters, matches)
                 code_match = code_pattern.search(string, i)
             elif in_image:
                 in_image = False
@@ -125,7 +126,7 @@ def find_nested_tokenizer(string, link_defs):
     return matches
 
 
-def find_link_image(string, offset, delimiters, matches, link_defs):
+def find_link_image(string, offset, delimiters, matches):
     i = len(delimiters) - 1
     for delimiter in delimiters[::-1]:
         # found a link/image delimiter
@@ -134,7 +135,7 @@ def find_link_image(string, offset, delimiters, matches, link_defs):
             if not delimiter.active:
                 delimiters.remove(delimiter)
                 return offset
-            match = match_link_image(string, offset, delimiter, link_defs)
+            match = match_link_image(string, offset, delimiter)
             # found match
             if match:
                 # parse for emphasis
@@ -198,7 +199,7 @@ def process_emphasis(string, stack_bottom, delimiters, matches):
     del delimiters[stack_bottom:]
 
 
-def match_link_image(string, offset, delimiter, link_defs):
+def match_link_image(string, offset, delimiter):
     image = delimiter.type == "!["
     start = delimiter.start
     text_start = start + delimiter.number
@@ -230,7 +231,7 @@ def match_link_image(string, offset, delimiter, link_defs):
     # link definition reference
     if follows(string, offset, "["):
         # full link definition reference
-        result = match_link_label(string, offset + 1, link_defs)
+        result = match_link_label(string, offset + 1)
         if result:
             match_info, (dest, title) = result
             end = match_info[1]
@@ -243,7 +244,7 @@ def match_link_image(string, offset, delimiter, link_defs):
             )
             match.type = "Link" if not image else "Image"
             return match
-        ref = is_link_label(text, link_defs)
+        ref = is_link_label(text)
         if ref:
             # compact link definition reference
             if follows(string, offset + 1, "]"):
@@ -260,7 +261,7 @@ def match_link_image(string, offset, delimiter, link_defs):
                 return match
         return None
     # shortcut link definition reference
-    ref = is_link_label(text, link_defs)
+    ref = is_link_label(text)
     if ref:
         dest, title = ref
         end = offset + 1
@@ -331,7 +332,7 @@ def match_link_title(string, offset):
     return None
 
 
-def match_link_label(string, offset, link_defs):
+def match_link_label(string, offset):
     start = -1
     end = -1
     escaped = False
@@ -348,7 +349,8 @@ def match_link_label(string, offset, link_defs):
             label = string[start + 1 : end]
             match_info = start, end + 1, label
             if label.strip() != "":
-                ref = link_defs.get(normalize_label(label), None)
+                link_definitions = get_parse_context().link_definitions
+                ref = link_definitions.get(normalize_label(label), None)
                 if ref is not None:
                     return match_info, ref
                 return None
@@ -358,7 +360,7 @@ def match_link_label(string, offset, link_defs):
     return None
 
 
-def is_link_label(text, link_defs):
+def is_link_label(text):
     escaped = False
     for c in text:
         if c == "\\" and not escaped:
@@ -368,7 +370,8 @@ def is_link_label(text, link_defs):
         elif escaped:
             escaped = False
     if text.strip() != "":
-        return link_defs.get(normalize_label(text), None)
+        link_definitions = get_parse_context().link_definitions
+        return link_definitions.get(normalize_label(text), None)
     return None
 
 
