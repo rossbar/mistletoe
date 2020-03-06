@@ -72,7 +72,7 @@ class TestLaTeXRenderer(TestCase):
 
     def test_list(self):
         output = "\\begin{itemize}\ninner\\end{itemize}\n"
-        self._test_token("List", output, leader=None)
+        self._test_token("List", output, start_at=None)
 
     def test_list_item(self):
         self._test_token("ListItem", "\\item inner\n")

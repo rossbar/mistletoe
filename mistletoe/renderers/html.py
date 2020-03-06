@@ -129,9 +129,9 @@ class HTMLRenderer(BaseRenderer):
 
     def render_list(self, token):
         template = "<{tag}{attr}>\n{inner}\n</{tag}>"
-        if token.leader is not None:
+        if token.start_at is not None:
             tag = "ol"
-            attr = ' start="{}"'.format(token.leader) if token.leader != 1 else ""
+            attr = ' start="{}"'.format(token.start_at) if token.start_at != 1 else ""
         else:
             tag = "ul"
             attr = ""
