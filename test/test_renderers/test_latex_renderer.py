@@ -128,7 +128,7 @@ class TestLaTeXlink_definitions(TestCase):
             "\n"
             "\\end{document}\n"
         )
-        self.assertEqual(self.renderer.render(Document(raw)), target)
+        self.assertEqual(self.renderer.render(Document.read(raw)), target)
 
     def test_link_definition(self):
         from mistletoe import Document
@@ -143,4 +143,4 @@ class TestLaTeXlink_definitions(TestCase):
             "\n"
             "\\end{document}\n"
         )
-        self.assertEqual(self.renderer.render(Document(raw)), target)
+        self.assertEqual(self.renderer.render(Document.read(raw)), target)

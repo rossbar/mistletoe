@@ -19,13 +19,13 @@ class TestTOCRenderer(TestCase):
 
     def test_depth(self):
         renderer = TOCRenderer(depth=3)
-        token = Document(["# title\n", "## heading\n", "#### heading\n"])
+        token = Document.read(["# title\n", "## heading\n", "#### heading\n"])
         renderer.render(token)
         self.assertEqual(renderer._headings, [(2, "heading")])
 
     def test_omit_title(self):
         renderer = TOCRenderer(omit_title=True)
-        token = Document(["# title\n", "\n", "## heading\n"])
+        token = Document.read(["# title\n", "\n", "## heading\n"])
         renderer.render(token)
         self.assertEqual(renderer._headings, [(2, "heading")])
 
@@ -37,7 +37,7 @@ class TestTOCRenderer(TestCase):
             lambda x: re.match(r"foo", x),
         ]
         renderer = TOCRenderer(filter_conds=filter_conds)
-        token = Document(
+        token = Document.read(
             ["# title\n", "\n", "## heading\n", "\n", "#### not heading\n"]
         )
         renderer.render(token)

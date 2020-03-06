@@ -6,7 +6,7 @@ from mistletoe.latex_token import Math
 
 
 def test_basic(data_regression):
-    doc = Document(
+    doc = Document.read(
         dedent(
             """\
     Setext Header
@@ -49,7 +49,7 @@ def test_basic(data_regression):
 
 
 def test_link_references(data_regression):
-    doc = Document(["[bar][baz]\n", "\n", "[baz]: spam\n"], store_definitions=True)
+    doc = Document.read(["[bar][baz]\n", "\n", "[baz]: spam\n"], store_definitions=True)
     output = ast_to_json(doc)
     data_regression.check(output)
 
@@ -82,15 +82,15 @@ def test_extra_tokens():
     }
 
     with JsonRenderer() as render:
-        output = render.render(Document(["$b$"]), as_string=False)
+        output = render.render(Document.read(["$b$"]), as_string=False)
     assert output == output
     renderer = JsonRenderer(Math)
     with renderer as render:
-        output = render.render(Document(["$b$"]), as_string=False)
+        output = render.render(Document.read(["$b$"]), as_string=False)
     assert output == output_math
     with renderer as render:
-        output = render.render(Document(["$b$"]), as_string=False)
+        output = render.render(Document.read(["$b$"]), as_string=False)
     assert output == output_math
     with JsonRenderer() as render:
-        output = render.render(Document(["$b$"]), as_string=False)
+        output = render.render(Document.read(["$b$"]), as_string=False)
     assert output == output

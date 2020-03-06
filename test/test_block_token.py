@@ -308,7 +308,7 @@ class TestTableCell(TestToken):
 class TestLinkDefinition(unittest.TestCase):
     def test_store(self):
         lines = ["[key 1]: value1\n", "[key 2]: value2\n"]
-        token = block_tokens.Document(lines)
+        token = block_tokens.Document.read(lines)
         self.assertEqual(
             token.link_definitions, {"key 1": ("value1", ""), "key 2": ("value2", "")}
         )
@@ -317,13 +317,13 @@ class TestLinkDefinition(unittest.TestCase):
 class TestDocument(unittest.TestCase):
     def test_store_link_definition(self):
         lines = ["[key 1]: value1\n", "[key 2]: value2\n"]
-        document = block_tokens.Document(lines)
+        document = block_tokens.Document.read(lines)
         self.assertEqual(document.link_definitions["key 1"], ("value1", ""))
         self.assertEqual(document.link_definitions["key 2"], ("value2", ""))
 
     def test_auto_splitlines(self):
         lines = "some\ncontinual\nlines\n"
-        document = block_tokens.Document(lines)
+        document = block_tokens.Document.read(lines)
         self.assertIsInstance(document.children[0], block_tokens.Paragraph)
         self.assertEqual(len(document.children), 1)
 
@@ -342,7 +342,7 @@ class TestThematicBreak(unittest.TestCase):
 class TestContains(unittest.TestCase):
     def test_contains(self):
         lines = ["# heading\n", "\n", "paragraph\n", "with\n", "`code`\n"]
-        token = block_tokens.Document(lines)
+        token = block_tokens.Document.read(lines)
         self.assertTrue("heading" in token)
         self.assertTrue("code" in token)
         self.assertFalse("foo" in token)

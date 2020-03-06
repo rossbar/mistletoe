@@ -104,7 +104,7 @@ from mistletoe import Document, HTMLRenderer
 
 with open('foo.md', 'r') as fin:
     with HTMLRenderer() as renderer:
-        rendered = renderer.render(Document(fin))
+        rendered = renderer.render(Document.read(fin))
 ```
 
 ### From the command-line
@@ -421,7 +421,7 @@ from contrib.github_wiki import GithubWikiRenderer
 
 with open('foo.md', 'r') as fin:
     with GithubWikiRenderer() as renderer:
-        rendered = renderer.render(Document(fin))
+        rendered = renderer.render(Document.read(fin))
 ```
 
 For more info, take a look at the `base_renderer` module in mistletoe.

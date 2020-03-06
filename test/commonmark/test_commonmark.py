@@ -14,5 +14,5 @@ with open(os.path.join(os.path.dirname(__file__), "commonmark.json"), "r") as fi
 def test_commonmark(entry):
     test_case = entry["markdown"].splitlines(keepends=True)
     with HTMLRenderer() as renderer:
-        output = renderer.render(Document(test_case))
+        output = renderer.render(Document.read(test_case))
     assert entry["html"] == output

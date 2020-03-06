@@ -28,7 +28,7 @@ class BaseRenderer(object):
             >>> from mistletoe import Document
             >>> from some_renderer import SomeRenderer
             >>> with SomeRenderer() as renderer:
-            ...     rendered = renderer.render(Document(fin))
+            ...     rendered = renderer.render(Document.read(fin))
 
         See mistletoe.renderers.html for an implementation example.
 

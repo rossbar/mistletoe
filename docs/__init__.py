@@ -49,4 +49,4 @@ def build(files=None):
             with open(rendered_file, "w+") as fout:
                 with DocRenderer() as renderer:
                     renderer.files = files
-                    print(renderer.render_document(Document(fin), f), file=fout)
+                    print(renderer.render_document(Document.read(fin), f), file=fout)

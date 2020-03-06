@@ -23,4 +23,4 @@ def markdown(iterable, renderer=HTMLRenderer):
     Enables inline and block-level HTML tags.
     """
     with renderer() as renderer:
-        return renderer.render(Document(iterable))
+        return renderer.render(Document.read(iterable))

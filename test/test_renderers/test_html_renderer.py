@@ -153,23 +153,23 @@ class TestHTMLRendererLinkDefinitions(TestCase):
     def test_link_definition_image(self):
         from mistletoe import Document
 
-        token = Document(["![alt][foo]\n", "\n", '[foo]: bar "title"\n'])
+        token = Document.read(["![alt][foo]\n", "\n", '[foo]: bar "title"\n'])
         output = '<p><img src="bar" alt="alt" title="title" /></p>\n'
         self.assertEqual(self.renderer.render(token), output)
 
     def test_link_definition(self):
-        token = Document(["[name][foo]\n", "\n", "[foo]: target\n"])
+        token = Document.read(["[name][foo]\n", "\n", "[foo]: target\n"])
         output = '<p><a href="target">name</a></p>\n'
         self.assertEqual(self.renderer.render(token), output)
 
     def test_link_definition_1st(self):
-        token = Document(["[foo]: target\n", "\n", "[name][foo]\n"])
+        token = Document.read(["[foo]: target\n", "\n", "[name][foo]\n"])
         output = '<p><a href="target">name</a></p>\n'
         self.assertEqual(self.renderer.render(token), output)
 
     def test_link_definition_2reads(self):
         """The link definitions should not persist between parses."""
-        token = Document(["[name][foo]\n", "\n", "[foo]: target\n"])
-        token = Document(["[name][foo]\n", "\n"])
+        token = Document.read(["[name][foo]\n", "\n", "[foo]: target\n"])
+        token = Document.read(["[name][foo]\n", "\n"])
         output = "<p>[name][foo]</p>\n"
         self.assertEqual(self.renderer.render(token), output)
