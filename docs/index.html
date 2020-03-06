@@ -193,7 +193,7 @@ child.  To parse child tokens, simply pass <code>match_obj</code> to the <code>s
 constructor (which assumes children to be in <code>match_obj.group(1)</code>),
 and save off all the additional attributes we need:
 </p>
-<pre><code class="lang-python">from mistletoe.span_token import SpanToken
+<pre><code class="lang-python">from mistletoe.base_elements import SpanToken
 
 class GithubWiki(SpanToken):
     pattern = re.compile(r&quot;\[\[ *(.+?) *\| *(.+?) *\]\]&quot;)

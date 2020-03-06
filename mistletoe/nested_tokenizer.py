@@ -1,3 +1,4 @@
+"""Tokenize nested span tokens."""
 import re
 from threading import local
 
@@ -75,7 +76,7 @@ _code_matches = local()
 _code_matches.value = []
 
 
-def find_core_tokenizer(string, link_defs):
+def find_nested_tokenizer(string, link_defs):
     delimiters = []
     matches = []
     escaped = False

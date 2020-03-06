@@ -1,5 +1,5 @@
 from unittest import TestCase, mock
-from mistletoe.block_token import Document, Heading
+from mistletoe.block_tokens import Document, Heading
 from contrib.toc_renderer import TOCRenderer
 
 
@@ -42,7 +42,7 @@ class TestTOCRenderer(TestCase):
         renderer.render(token)
         self.assertEqual(renderer._headings, [(4, "not heading")])
 
-    @mock.patch("mistletoe.block_token.List")
+    @mock.patch("mistletoe.block_tokens.List")
     def test_get_toc(self, MockList):
         headings = [
             (1, "heading 1"),

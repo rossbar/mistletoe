@@ -3,7 +3,7 @@ GitHub Wiki support for mistletoe.
 """
 
 import re
-from mistletoe.span_token import SpanToken
+from mistletoe.base_elements import SpanToken
 from mistletoe.renderers.html import HTMLRenderer
 
 

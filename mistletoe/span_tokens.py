@@ -3,9 +3,9 @@ Built-in span-level token classes.
 """
 import re
 
-from mistletoe import core_tokenizer
+from mistletoe import nested_tokenizer
 from mistletoe.parse_context import get_parse_context
-
+from mistletoe.base_elements import SpanToken
 
 """
 Tokens to be included in the parsing process, in the order specified.
@@ -21,25 +21,6 @@ __all__ = [
 ]
 
 
-class SpanToken:
-    parse_inner = True
-    parse_group = 1
-    precedence = 5
-
-    def __init__(self, match):
-        if not self.parse_inner:
-            self.content = match.group(self.parse_group)
-
-    def __contains__(self, text):
-        if hasattr(self, "children"):
-            return any(text in child for child in self.children)
-        return text in self.content
-
-    @classmethod
-    def find(cls, string):
-        return cls.pattern.finditer(string)
-
-
 class CoreTokens(SpanToken):
     precedence = 3
 
@@ -48,7 +29,7 @@ class CoreTokens(SpanToken):
 
     @classmethod
     def find(cls, string):
-        return core_tokenizer.find_core_tokenizer(
+        return nested_tokenizer.find_nested_tokenizer(
             string, get_parse_context().link_definitions
         )
 
@@ -80,8 +61,8 @@ class InlineCode(SpanToken):
 
     @classmethod
     def find(cls, string):
-        matches = core_tokenizer._code_matches.value
-        core_tokenizer._code_matches.value = []
+        matches = nested_tokenizer._code_matches.value
+        nested_tokenizer._code_matches.value = []
         return matches
 
 
