@@ -88,7 +88,7 @@ and rendering to HTML. The function also accepts an additional argument
 
 ```python
 import mistletoe
-from mistletoe.latex_renderer import LaTeXRenderer
+from mistletoe.renderers.latex import LaTeXRenderer
 
 with open('foo.md', 'r') as fin:
     rendered = mistletoe.markdown(fin, LaTeXRenderer)
@@ -376,7 +376,7 @@ of most of them for you. Simply pass your custom token class to
 `super().__init__()` does the trick:
 
 ```python
-from mistletoe.html_renderer import HTMLRenderer
+from mistletoe.renderers.html import HTMLRenderer
 
 class GithubWikiRenderer(HTMLRenderer):
     def __init__(self):
@@ -395,7 +395,7 @@ def render_github_wiki(self, token):
 Cleaning up, we have our new renderer class:
 
 ```python
-from mistletoe.html_renderer import HTMLRenderer, escape_url
+from mistletoe.renderers.html import HTMLRenderer, escape_url
 
 class GithubWikiRenderer(HTMLRenderer):
     def __init__(self):

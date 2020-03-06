@@ -5,7 +5,7 @@ See `if __name__ == '__main__'` section for sample usage.
 """
 
 import re
-from mistletoe.html_renderer import HTMLRenderer
+from mistletoe.renderers.html import HTMLRenderer
 
 
 class TOCRenderer(HTMLRenderer):

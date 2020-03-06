@@ -1,5 +1,5 @@
 from unittest import TestCase, mock
-from mistletoe.html_renderer import HTMLRenderer
+from mistletoe.renderers.html import HTMLRenderer
 
 
 class TestRenderer(TestCase):
@@ -96,7 +96,7 @@ class TestHTMLRenderer(TestRenderer):
         self._test_token("ListItem", output)
 
     def test_table_with_header(self):
-        func_path = "mistletoe.html_renderer.HTMLRenderer.render_table_row"
+        func_path = "mistletoe.renderers.html.HTMLRenderer.render_table_row"
         with mock.patch(func_path, autospec=True) as mock_func:
             mock_func.return_value = "row"
             output = (
@@ -108,7 +108,7 @@ class TestHTMLRenderer(TestRenderer):
             self._test_token("Table", output)
 
     def test_table_without_header(self):
-        func_path = "mistletoe.html_renderer.HTMLRenderer.render_table_row"
+        func_path = "mistletoe.renderers.html.HTMLRenderer.render_table_row"
         with mock.patch(func_path, autospec=True) as mock_func:
             mock_func.return_value = "row"
             output = "<table>\n<tbody>\ninner</tbody>\n</table>"

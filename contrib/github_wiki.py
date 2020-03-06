@@ -4,7 +4,7 @@ GitHub Wiki support for mistletoe.
 
 import re
 from mistletoe.span_token import SpanToken
-from mistletoe.html_renderer import HTMLRenderer
+from mistletoe.renderers.html import HTMLRenderer
 
 
 __all__ = ["GithubWiki", "GithubWikiRenderer"]

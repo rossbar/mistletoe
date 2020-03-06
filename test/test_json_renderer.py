@@ -1,12 +1,13 @@
 import unittest
-from mistletoe import Document, ast_renderer
+from mistletoe import Document
+from mistletoe.renderers.json import ast_to_json
 
 
-class TestASTRenderer(unittest.TestCase):
+class TestJSONRenderer(unittest.TestCase):
     def test(self):
         self.maxDiff = None
         d = Document(["# heading 1\n", "\n", "hello\n", "world\n"])
-        output = ast_renderer.get_ast(d)
+        output = ast_to_json(d)
         target = {
             "type": "Document",
             "footnotes": {},
@@ -48,5 +49,5 @@ class TestASTRenderer(unittest.TestCase):
                 }
             ],
         }
-        output = ast_renderer.get_ast(d)
+        output = ast_to_json(d)
         self.assertEqual(output, target)

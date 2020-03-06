@@ -1,5 +1,5 @@
 from unittest import TestCase, mock
-from mistletoe.latex_renderer import LaTeXRenderer
+from mistletoe.renderers.latex import LaTeXRenderer
 
 
 class TestLaTeXRenderer(TestCase):
@@ -65,7 +65,7 @@ class TestLaTeXRenderer(TestCase):
         self._test_token("Paragraph", output)
 
     def test_block_code(self):
-        func_path = "mistletoe.latex_renderer.LaTeXRenderer.render_raw_text"
+        func_path = "mistletoe.renderers.latex.LaTeXRenderer.render_raw_text"
         with mock.patch(func_path, return_value="inner"):
             output = "\n\\begin{lstlisting}[language=sh]\ninner\\end{lstlisting}\n"
             self._test_token("BlockCode", output, language="sh")
@@ -78,7 +78,7 @@ class TestLaTeXRenderer(TestCase):
         self._test_token("ListItem", "\\item inner\n")
 
     def test_table_with_header(self):
-        func_path = "mistletoe.latex_renderer.LaTeXRenderer.render_table_row"
+        func_path = "mistletoe.renderers.latex.LaTeXRenderer.render_table_row"
         with mock.patch(func_path, autospec=True, return_value="row\n"):
             output = "\\begin{tabular}{l c r}\nrow\n\\hline\ninner\\end{tabular}\n"
             self._test_token("Table", output, column_align=[None, 0, 1])
