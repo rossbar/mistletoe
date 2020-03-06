@@ -4,7 +4,6 @@ Built-in span-level token classes.
 import re
 
 from mistletoe import nested_tokenizer
-from mistletoe.parse_context import get_parse_context
 from mistletoe.base_elements import SpanToken
 
 """
@@ -25,13 +24,12 @@ class CoreTokens(SpanToken):
     precedence = 3
 
     def __new__(self, match):
+        # TODO this needs to be made more general (so tokens can be in diffent modules)
         return globals()[match.type](match)
 
     @classmethod
     def find(cls, string):
-        return nested_tokenizer.find_nested_tokenizer(
-            string, get_parse_context().link_definitions
-        )
+        return nested_tokenizer.find_nested_tokenizer(string)
 
 
 class Strong(SpanToken):
@@ -76,7 +74,7 @@ class Strikethrough(SpanToken):
 
 class Image(SpanToken):
     """
-    Image tokens. ("![alt](src "title")")
+    Image tokens, with inline targets: "![alt](src "title")".
 
     Attributes:
         src (str): image source.
@@ -90,7 +88,7 @@ class Image(SpanToken):
 
 class Link(SpanToken):
     """
-    Link tokens. ("[name](target)")
+    Link tokens, with inline targets: "[name](target)"
 
     Attributes:
         target (str): link target.
