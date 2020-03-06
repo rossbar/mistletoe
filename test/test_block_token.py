@@ -235,7 +235,8 @@ class TestTable(unittest.TestCase):
             self.assertEqual(token.column_align, [None, None, None])
             token.children
             calls = [
-                call.read(line, [None, None, None]) for line in lines[:1] + lines[2:]
+                call.read(line, [None, None, None], lineno=l)
+                for line, l in zip(lines[:1] + lines[2:], [0, 2, 3])
             ]
             mock.assert_has_calls(calls)
 
@@ -247,7 +248,10 @@ class TestTable(unittest.TestCase):
             self.assertTrue(hasattr(token, "header"))
             self.assertEqual(token.column_align, [1, None])
             token.children
-            calls = [call.read(line, [1, None]) for line in lines[:1] + lines[2:]]
+            calls = [
+                call.read(line, [1, None], lineno=l)
+                for line, l in zip(lines[:1] + lines[2:], [0, 2])
+            ]
             mock.assert_has_calls(calls)
 
     def test_not_easy_table(self):
@@ -264,7 +268,10 @@ class TestTableRow(unittest.TestCase):
             self.assertEqual(result.row_align, [None])
             self.assertEquals(len(result.children), 2)
             mock.assert_has_calls(
-                [call.read("cell 1", None), call.read("cell 2", None)]
+                [
+                    call.read("cell 1", None, lineno=0),
+                    call.read("cell 2", None, lineno=0),
+                ]
             )
 
     def test_easy_table_row(self):
@@ -274,7 +281,10 @@ class TestTableRow(unittest.TestCase):
             self.assertEqual(result.row_align, [None])
             self.assertEquals(len(result.children), 2)
             mock.assert_has_calls(
-                [call.read("cell 1", None), call.read("cell 2", None)]
+                [
+                    call.read("cell 1", None, lineno=0),
+                    call.read("cell 2", None, lineno=0),
+                ]
             )
 
     def test_short_row(self):
@@ -283,7 +293,9 @@ class TestTableRow(unittest.TestCase):
             result = block_tokens.TableRow.read(line, [None, None])
             self.assertEqual(result.row_align, [None, None])
             self.assertEquals(len(result.children), 2)
-            mock.assert_has_calls([call.read("cell 1", None), call.read("", None)])
+            mock.assert_has_calls(
+                [call.read("cell 1", None, lineno=0), call.read("", None, lineno=0)]
+            )
 
 
 class TestTableCell(TestToken):

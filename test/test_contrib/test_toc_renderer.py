@@ -1,5 +1,6 @@
 from unittest import TestCase, mock
 from mistletoe.block_tokens import Document, Heading
+from mistletoe.block_tokenizer import FileWrapper
 from contrib.toc_renderer import TOCRenderer
 
 
@@ -12,7 +13,7 @@ class TestTOCRenderer(TestCase):
     def test_render_heading(self):
         renderer = TOCRenderer()
         Heading.start("### some *text*\n")
-        token = Heading.read(iter(["foo"]), expand_spans=True)
+        token = Heading.read(FileWrapper(["foo"]), expand_spans=True)
         renderer.render_heading(token)
         self.assertEqual(renderer._headings[0], (3, "some text"))
 
