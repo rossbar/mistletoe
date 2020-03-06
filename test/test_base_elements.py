@@ -4,7 +4,7 @@ from mistletoe import Document
 
 
 def test_walk():
-    doc = Document(
+    doc = Document.read(
         dedent(
             """\
         a **b**

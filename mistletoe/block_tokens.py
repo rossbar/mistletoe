@@ -37,25 +37,35 @@ __all__ = [
 ]
 
 
+@attr.s(slots=True, kw_only=True)
 class Document(BlockToken):
-    """Document container.
+    """Document container."""
 
-    Besides the document, it contains metadata.
-    """
+    children: list = attr.ib(repr=lambda c: str(len(c)))
+    link_definitions: dict = attr.ib(repr=lambda d: str(len(d)))
 
-    def __init__(self, lines, start_line: int = 0, store_definitions=False):
-        """Constructor
+    @classmethod
+    def read(
+        cls, lines, start_line: int = 0, reset_definitions=True, store_definitions=False
+    ):
+        """Read a document
 
-        :param lines: Lines or string to parse
+        :param lines:  Lines or string to parse
         :param start_line: The initial line (used for nested parsing)
+        :param reset_definitions: remove any previously stored link_definitions
+        :param store_definitions: store LinkDefinitions or ignore them
         """
         if isinstance(lines, str):
             lines = lines.splitlines(keepends=True)
         lines = [line if line.endswith("\n") else "{}\n".format(line) for line in lines]
-        self.link_definitions = {}
-        get_parse_context().link_definitions = self.link_definitions
-        self.children = tokenizer.tokenize_main(
+        # reset link definitions
+        if reset_definitions:
+            get_parse_context().link_definitions = {}
+        children = tokenizer.tokenize_main(
             lines, start_line=start_line, store_definitions=store_definitions
+        )
+        return cls(
+            children=children, link_definitions=get_parse_context().link_definitions
         )
 
 

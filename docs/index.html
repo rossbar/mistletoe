@@ -89,7 +89,7 @@ process.
 
 with open(&#x27;foo.md&#x27;, &#x27;r&#x27;) as fin:
     with HTMLRenderer() as renderer:
-        rendered = renderer.render(Document(fin))
+        rendered = renderer.render(Document.read(fin))
 </code></pre>
 <h3>From the command-line</h3>
 <p>pip installation enables mistletoe&#x27;s commandline utility. Type the following
@@ -248,7 +248,7 @@ from contrib.github_wiki import GithubWikiRenderer
 
 with open(&#x27;foo.md&#x27;, &#x27;r&#x27;) as fin:
     with GithubWikiRenderer() as renderer:
-        rendered = renderer.render(Document(fin))
+        rendered = renderer.render(Document.read(fin))
 </code></pre>
 <p>For more info, take a look at the <code>base_renderer</code> module in mistletoe.
 The docstrings might give you a more granular idea of customizing mistletoe
