@@ -3,14 +3,14 @@ from functools import reduce
 import re
 
 from mistletoe import BaseRenderer, span_token, block_token
-from mistletoe.core_tokens import MatchObj
+from span_tokenizer import tokenize_span
+from mistletoe.core_tokenizer import MatchObj
+from mistletoe.parse_context import get_parse_context
 
 
 class Program(block_token.BlockToken):
     def __init__(self, lines):
-        self.children = span_token.tokenize_inner(
-            "".join([line.strip() for line in lines])
-        )
+        self.children = tokenize_span("".join([line.strip() for line in lines]))
 
 
 class Expr(span_token.SpanToken):
@@ -76,8 +76,9 @@ class Scheme(BaseRenderer):
             "Number": self.render_number,
             "Variable": self.render_variable,
         }
-        block_token._token_types.value = []
-        span_token._token_types.value = [Expr, Number, Variable, Whitespace]
+        parse_context = get_parse_context()
+        parse_context.block_tokens = []
+        parse_context.span_tokens = [Expr, Number, Variable, Whitespace]
 
         self.env = ChainMap(
             {

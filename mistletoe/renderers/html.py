@@ -202,7 +202,7 @@ class HTMLRenderer(BaseRenderer):
         return token.content
 
     def render_document(self, token):
-        self.footnotes.update(token.footnotes)
+        self.link_definitions.update(token.link_definitions)
         inner = "\n".join([self.render(child) for child in token.children])
         return "{}\n".format(inner) if inner else ""
 

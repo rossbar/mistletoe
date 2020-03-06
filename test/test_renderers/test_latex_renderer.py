@@ -106,16 +106,16 @@ class TestLaTeXRenderer(TestCase):
             "inner"
             "\\end{document}\n"
         )
-        self._test_token("Document", output, footnotes={})
+        self._test_token("Document", output, link_definitions={})
 
 
-class TestLaTeXFootnotes(TestCase):
+class TestLaTeXlink_definitions(TestCase):
     def setUp(self):
         self.renderer = LaTeXRenderer()
         self.renderer.__enter__()
         self.addCleanup(self.renderer.__exit__, None, None, None)
 
-    def test_footnote_image(self):
+    def test_link_definition_image(self):
         from mistletoe import Document
 
         raw = ["![alt][foo]\n", "\n", '[foo]: bar "title"\n']
@@ -130,7 +130,7 @@ class TestLaTeXFootnotes(TestCase):
         )
         self.assertEqual(self.renderer.render(Document(raw)), target)
 
-    def test_footnote_link(self):
+    def test_link_definition(self):
         from mistletoe import Document
 
         raw = ["[name][key]\n", "\n", "[key]: target\n"]

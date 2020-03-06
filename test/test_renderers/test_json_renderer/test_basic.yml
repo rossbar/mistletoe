@@ -13,5 +13,5 @@ children:
   - content: world
     type: RawText
   type: Paragraph
-footnotes: {}
+link_definitions: {}
 type: Document

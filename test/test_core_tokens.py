@@ -1,5 +1,5 @@
 from unittest import TestCase
-from mistletoe.core_tokens import (
+from mistletoe.core_tokenizer import (
     MatchObj,
     Delimiter,
     follows,

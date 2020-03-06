@@ -1,6 +1,7 @@
 from unittest import TestCase, mock
 from mistletoe import span_token, Document
-from mistletoe.span_token import tokenize_inner, _token_types
+from mistletoe.span_tokenizer import tokenize_span
+from mistletoe.parse_context import get_parse_context
 from contrib.github_wiki import GithubWiki, GithubWikiRenderer
 
 
@@ -13,19 +14,19 @@ class TestGithubWiki(TestCase):
 
     def test_parse(self):
         MockRawText = mock.Mock(autospec="mistletoe.span_token.RawText")
-        RawText = _token_types.value.pop()
-        _token_types.value.append(MockRawText)
+        RawText = get_parse_context().span_tokens.pop()
+        get_parse_context().span_tokens.append(MockRawText)
         try:
-            tokens = tokenize_inner("text with [[wiki | target]]")
+            tokens = tokenize_span("text with [[wiki | target]]")
             token = tokens[1]
             self.assertIsInstance(token, GithubWiki)
             self.assertEqual(token.target, "target")
             # TODO this assert is failing if part of a full pytest run only
             # MockRawText.assert_has_calls([mock.call('text with '), mock.call('wiki')])
         finally:
-            _token_types.value[-1] = RawText
+            get_parse_context().span_tokens[-1] = RawText
 
     def test_render(self):
-        token = next(iter(tokenize_inner("[[wiki|target]]")))
+        token = next(iter(tokenize_span("[[wiki|target]]")))
         output = '<a href="target">wiki</a>'
         self.assertEqual(self.renderer.render(token), output)

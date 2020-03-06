@@ -1,12 +1,10 @@
 """
 Built-in span-level token classes.
 """
-
 import re
-from threading import local
 
-import mistletoe.span_tokenizer as tokenizer
-from mistletoe import core_tokens
+from mistletoe import core_tokenizer
+from mistletoe.parse_context import get_parse_context
 
 
 """
@@ -21,55 +19,6 @@ __all__ = [
     "LineBreak",
     "RawText",
 ]
-
-
-_root_node = None
-
-
-def tokenize_inner(content):
-    """
-    A wrapper around span_tokenizer.tokenize. Pass in all span-level token
-    constructors as arguments to span_tokenizer.tokenize.
-
-    Doing so (instead of importing span_token module in span_tokenizer)
-    avoids cyclic dependency issues, and allows for future injections of
-    custom token classes.
-
-    _token_types variable is at the bottom of this module.
-
-    See also: span_tokenizer.tokenize, block_token.tokenize.
-    """
-    return tokenizer.tokenize(content, _token_types.value)
-
-
-def add_token(token_cls, position=1):
-    """
-    Allows external manipulation of the parsing process.
-    This function is called in BaseRenderer.__enter__.
-
-    Arguments:
-        token_cls (SpanToken): token to be included in the parsing process.
-    """
-    _token_types.value.insert(position, token_cls)
-
-
-def remove_token(token_cls):
-    """
-    Allows external manipulation of the parsing process.
-    This function is called in BaseRenderer.__exit__.
-
-    Arguments:
-        token_cls (SpanToken): token to be removed from the parsing process.
-    """
-    _token_types.value.remove(token_cls)
-
-
-def reset_tokens():
-    """
-    Resets global _token_types to all token classes in __all__.
-    """
-    global _token_types
-    _token_types.value = [globals()[cls_name] for cls_name in __all__]
 
 
 class SpanToken:
@@ -99,7 +48,9 @@ class CoreTokens(SpanToken):
 
     @classmethod
     def find(cls, string):
-        return core_tokens.find_core_tokens(string, _root_node)
+        return core_tokenizer.find_core_tokenizer(
+            string, get_parse_context().link_definitions
+        )
 
 
 class Strong(SpanToken):
@@ -129,8 +80,8 @@ class InlineCode(SpanToken):
 
     @classmethod
     def find(cls, string):
-        matches = core_tokens._code_matches
-        core_tokens._code_matches = []
+        matches = core_tokenizer._code_matches.value
+        core_tokenizer._code_matches.value = []
         return matches
 
 
@@ -330,8 +281,3 @@ class HTMLSpan(SpanToken):
     )
     parse_inner = False
     parse_group = 0
-
-
-_token_types = local()
-_token_types.value = []
-reset_tokens()

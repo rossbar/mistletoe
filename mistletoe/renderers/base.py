@@ -4,7 +4,8 @@ Base class for renderers.
 
 import re
 import sys
-from mistletoe import block_token, span_token
+from mistletoe import span_token
+from mistletoe.parse_context import get_parse_context, set_parse_context
 
 
 class BaseRenderer(object):
@@ -72,17 +73,18 @@ class BaseRenderer(object):
             "Document": self.render_document,
         }
         self._extras = extras
-
+        parse_context = get_parse_context(reset=True)
         for token in extras:
             if issubclass(token, span_token.SpanToken):
-                token_module = span_token
+                # insert at position 1 (since backslash escape should also be 1st)
+                parse_context.span_tokens.insert(1, token)
             else:
-                token_module = block_token
-            token_module.add_token(token)
+                parse_context.block_tokens.insert(0, token)
             render_func = getattr(self, self._cls_to_func(token.__name__))
             self.render_map[token.__name__] = render_func
 
-        self.footnotes = {}
+        self.parse_context = parse_context.copy()
+        self.link_definitions = {}
 
     def render(self, token):
         """
@@ -115,16 +117,14 @@ class BaseRenderer(object):
         """
         Make renderer classes into context managers.
         """
+        set_parse_context(self.parse_context)
         return self
 
     def __exit__(self, exception_type, exception_val, traceback):
         """
         Make renderer classes into context managers.
-
-        Reset block_token._token_types and span_token._token_types.
         """
-        block_token.reset_tokens()
-        span_token.reset_tokens()
+        get_parse_context(reset=True)
 
     @classmethod
     def _cls_to_func(cls, cls_name):
