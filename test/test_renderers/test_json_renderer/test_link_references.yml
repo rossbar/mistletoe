@@ -1,0 +1,14 @@
+children:
+- children:
+  - children:
+    - content: bar
+      type: RawText
+    target: spam
+    title: ''
+    type: Link
+  type: Paragraph
+footnotes:
+  baz:
+  - spam
+  - ''
+type: Document
