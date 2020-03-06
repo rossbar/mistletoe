@@ -2,7 +2,7 @@ from collections import namedtuple
 from typing import List, Optional
 
 
-WalkItem = namedtuple("WalkItem", ["node", "parent", "depth"])
+WalkItem = namedtuple("WalkItem", ["node", "parent", "index", "depth"])
 
 
 class Token:
@@ -50,16 +50,42 @@ class Token:
         """
         current_depth = 0
         if include_self:
-            yield WalkItem(self, None, current_depth)
+            yield WalkItem(self, None, 0, current_depth)
         next_children = [(self, c) for c in self.children or []]
         while next_children and (depth is None or current_depth > depth):
             current_depth += 1
             new_children = []
-            for parent, child in next_children:
+            for idx, (parent, child) in enumerate(next_children):
                 if tokens is None or child.name in tokens:
-                    yield WalkItem(child, parent, current_depth)
+                    yield WalkItem(child, parent, idx, current_depth)
                 new_children.extend([(child, c) for c in child.children or []])
             next_children = new_children
+
+
+class SpanContainer:
+    """This is a container for inline span text.
+
+    We use it in order to delay the assessment of span text, when parsing a document,
+    so that all link definitions can be gathered first.
+    After the initial block parse, we walk through the document
+    and replace these span containers with the actual span tokens
+    (see `block_tokenizer.tokenize_main`).
+    """
+
+    def __init__(self, text):
+        self.text = text
+
+    def expand(self):
+        from mistletoe.span_tokenizer import tokenize_span
+
+        return tokenize_span(self.text)
+
+    def __iter__(self):
+        for _ in []:
+            yield
+
+    def __len__(self):
+        return 0
 
 
 class BlockToken(Token):
@@ -86,11 +112,7 @@ class BlockToken(Token):
 
         Default to stop at an empty line.
 
-        Note that BlockToken.read does not have to return a list of lines.
-        Because the return value of this function will be directly
-        passed into the token constructor, we can return any relevant
-        parsing information, sometimes even ready-made tokens,
-        into the constructor. See block_tokenizer.tokenize.
+        Note that BlockToken.read returns a token (or None).
 
         If BlockToken.read returns None, the read result is ignored,
         but the token class is responsible for resetting the iterator
@@ -99,11 +121,8 @@ class BlockToken(Token):
 
     """
 
-    def __init__(self, lines, tokenize_func):
-        self.children = tokenize_func(lines)
-
     @classmethod
-    def start(cls, line: str):
+    def start(cls, line: str) -> bool:
         """Takes a line from the document as argument, and
         returns a boolean representing whether that line marks the start
         of the current token. Every subclass of BlockToken must define a
@@ -112,7 +131,7 @@ class BlockToken(Token):
         raise NotImplementedError
 
     @classmethod
-    def read(cls, lines):
+    def read(cls, lines) -> Optional[Token]:
         """takes the rest of the lines in the document as an
         iterator (including the start line), and consumes all the lines
         that should be read into this token.

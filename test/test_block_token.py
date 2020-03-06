@@ -234,7 +234,9 @@ class TestTable(unittest.TestCase):
             self.assertTrue(hasattr(token, "header"))
             self.assertEqual(token.column_align, [None, None, None])
             token.children
-            calls = [call(line, [None, None, None]) for line in lines[:1] + lines[2:]]
+            calls = [
+                call.read(line, [None, None, None]) for line in lines[:1] + lines[2:]
+            ]
             mock.assert_has_calls(calls)
 
     def test_easy_table(self):
@@ -245,7 +247,7 @@ class TestTable(unittest.TestCase):
             self.assertTrue(hasattr(token, "header"))
             self.assertEqual(token.column_align, [1, None])
             token.children
-            calls = [call(line, [1, None]) for line in lines[:1] + lines[2:]]
+            calls = [call.read(line, [1, None]) for line in lines[:1] + lines[2:]]
             mock.assert_has_calls(calls)
 
     def test_not_easy_table(self):
@@ -258,32 +260,37 @@ class TestTableRow(unittest.TestCase):
     def test_match(self):
         with patch("mistletoe.block_tokens.TableCell") as mock:
             line = "| cell 1 | cell 2 |\n"
-            token = block_tokens.TableRow(line)
-            self.assertEqual(token.row_align, [None])
-            token.children
-            mock.assert_has_calls([call("cell 1", None), call("cell 2", None)])
+            result = block_tokens.TableRow.read(line)
+            self.assertEqual(result.row_align, [None])
+            self.assertEquals(len(result.children), 2)
+            mock.assert_has_calls(
+                [call.read("cell 1", None), call.read("cell 2", None)]
+            )
 
     def test_easy_table_row(self):
         with patch("mistletoe.block_tokens.TableCell") as mock:
             line = "cell 1 | cell 2\n"
-            token = block_tokens.TableRow(line)
-            self.assertEqual(token.row_align, [None])
-            token.children
-            mock.assert_has_calls([call("cell 1", None), call("cell 2", None)])
+            result = block_tokens.TableRow.read(line)
+            self.assertEqual(result.row_align, [None])
+            self.assertEquals(len(result.children), 2)
+            mock.assert_has_calls(
+                [call.read("cell 1", None), call.read("cell 2", None)]
+            )
 
     def test_short_row(self):
         with patch("mistletoe.block_tokens.TableCell") as mock:
             line = "| cell 1 |\n"
-            token = block_tokens.TableRow(line, [None, None])
-            self.assertEqual(token.row_align, [None, None])
-            token.children
-            mock.assert_has_calls([call("cell 1", None), call("", None)])
+            result = block_tokens.TableRow.read(line, [None, None])
+            self.assertEqual(result.row_align, [None, None])
+            self.assertEquals(len(result.children), 2)
+            mock.assert_has_calls([call.read("cell 1", None), call.read("", None)])
 
 
 class TestTableCell(TestToken):
     def test_match(self):
-        token = block_tokens.TableCell("cell 2")
+        token = block_tokens.TableCell.read("cell 2", expand_spans=True)
         self._test_token(token, "cell 2", align=None)
+        assert isinstance(token, block_tokens.TableCell)
 
 
 class TestLinkDefinition(unittest.TestCase):

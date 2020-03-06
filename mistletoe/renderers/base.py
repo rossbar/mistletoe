@@ -71,6 +71,7 @@ class BaseRenderer(object):
             "ThematicBreak": self.render_thematic_break,
             "LineBreak": self.render_line_break,
             "Document": self.render_document,
+            "LinkDefinition": self.render_link_definition,
         }
         self._extras = extras
         parse_context = get_parse_context(reset=True)
@@ -111,7 +112,7 @@ class BaseRenderer(object):
         Arguments:
             token: a branch node who has children attribute.
         """
-        return "".join(map(self.render, token.children))
+        return "".join(map(self.render, token.children or []))
 
     def __enter__(self):
         """
