@@ -26,7 +26,7 @@ setup(
         "Topic :: Text Processing :: Markup",
     ],
     keywords="markdown lexer parser development",
-    python_requires="~=3.5",
+    python_requires="~=3.6",
     install_requires=["attrs~=19.3"],
     extras_require={
         "code_style": ["flake8<3.8.0,>=3.7.0", "black==19.10b0", "pre-commit==1.17.0"],

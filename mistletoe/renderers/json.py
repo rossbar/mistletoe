@@ -38,9 +38,9 @@ def ast_to_json(token):
     #   [1]: https://docs.python.org/3/whatsnew/3.6.html
     #   [2]: https://github.com/syntax-tree/mdast
     node["type"] = token.name
-    node.update(token.__dict__)
+    node.update(token.to_dict())
     if "header" in node:
-        node["header"] = ast_to_json(node["header"])
+        node["header"] = ast_to_json(token.header)
     if token.children is not None:
         node["children"] = [ast_to_json(child) for child in token.children]
     return node

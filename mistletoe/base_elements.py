@@ -1,8 +1,10 @@
 from collections import namedtuple
 from typing import List, Optional
 
+import attr
 
-WalkItem = namedtuple("WalkItem", ["node", "parent", "index", "depth"])
+
+WalkItem = namedtuple("WalkItem", ["node", "parent", "depth"])
 
 
 class Token:
@@ -33,6 +35,12 @@ class Token:
             info.append("children={}".format(len(self.children)))
         return "{}({})".format(self.name, ",".join(info))
 
+    def to_dict(self):
+        try:
+            return attr.asdict(self)
+        except attr.exceptions.NotAnAttrsClassError:
+            return self.__dict__
+
     def walk(
         self,
         tokens: Optional[List[str]] = None,
@@ -50,15 +58,22 @@ class Token:
         """
         current_depth = 0
         if include_self:
-            yield WalkItem(self, None, 0, current_depth)
+            yield WalkItem(self, None, current_depth)
         next_children = [(self, c) for c in self.children or []]
+        if getattr(self, "header", None):
+            # table headers row
+            next_children.append((self, self.header))
         while next_children and (depth is None or current_depth > depth):
             current_depth += 1
             new_children = []
             for idx, (parent, child) in enumerate(next_children):
                 if tokens is None or child.name in tokens:
-                    yield WalkItem(child, parent, idx, current_depth)
+                    yield WalkItem(child, parent, current_depth)
                 new_children.extend([(child, c) for c in child.children or []])
+                if getattr(child, "header", None):
+                    # table headers row
+                    new_children.append((child, child.header))
+
             next_children = new_children
 
 
