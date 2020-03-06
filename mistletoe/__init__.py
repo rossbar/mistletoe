@@ -2,17 +2,17 @@
 Make mistletoe easier to import.
 """
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 __all__ = [
-    "renderers.html",
-    "renderers.json",
-    "block_token",
+    "renderers",
+    "base_elements",
+    "block_tokens",
     "block_tokenizer",
-    "span_token",
+    "span_tokens",
     "span_tokenizer",
 ]
 
-from mistletoe.block_token import Document
+from mistletoe.block_tokens import Document
 from mistletoe.renderers.base import BaseRenderer  # noqa: F401
 from mistletoe.renderers.html import HTMLRenderer
 
