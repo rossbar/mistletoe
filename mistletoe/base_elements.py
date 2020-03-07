@@ -1,4 +1,5 @@
 from collections import namedtuple
+import json
 from typing import List, Optional
 
 import attr
@@ -104,6 +105,25 @@ class SpanContainer:
 
     def __len__(self):
         return 0
+
+
+class TokenEncoder(json.JSONEncoder):
+    """A JSON encoder for mistletoe tokens."""
+
+    def default(self, obj):
+        if isinstance(obj, SpanContainer):
+            return list(obj.expand())
+        if isinstance(obj, Token):
+            return {obj.name: obj.to_dict()}
+        return super().default(obj)
+
+
+def serialize_tokens(tokens, as_dict=False):
+    """Serialize one or more tokens, to a JSON representation."""
+    string = json.dumps(tokens, cls=TokenEncoder)
+    if as_dict:
+        return json.loads(string)
+    return string
 
 
 class BlockToken(Token):
