@@ -17,6 +17,8 @@ class Token:
         if name == "content":
             return ""
 
+        raise AttributeError(name)
+
     @property
     def name(self) -> str:
         """Return the name of the element."""
@@ -71,7 +73,7 @@ class Token:
                 if tokens is None or child.name in tokens:
                     yield WalkItem(child, parent, current_depth)
                 new_children.extend([(child, c) for c in child.children or []])
-                if self.child == "Table" and getattr(child, "header", None) is not None:
+                if child.name == "Table" and getattr(child, "header", None) is not None:
                     # table headers row
                     new_children.append((child, child.header))
 
