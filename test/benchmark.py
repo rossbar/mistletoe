@@ -6,7 +6,7 @@ from importlib import import_module
 from time import perf_counter
 
 
-TEST_FILE = "syntax.md"
+TEST_FILE = "test/samples/syntax.md"
 TIMES = 1000
 
 
@@ -16,7 +16,7 @@ def benchmark(package_name):
             try:
                 package = import_module(package_name)
             except ImportError:
-                return f"not available: '{package_name}'."
+                return "not available."
 
             start = perf_counter()
             for i in range(TIMES):
@@ -33,7 +33,7 @@ def benchmark(package_name):
 @benchmark("markdown")
 def run_markdown(package):
     with open(TEST_FILE, "r") as fin:
-        return package.markdown(fin.read(), extensions=["extra"])
+        return package.markdown(fin.read(), ["extra"])
 
 
 @benchmark("mistune")
@@ -42,7 +42,7 @@ def run_mistune(package):
         return package.markdown(fin.read())
 
 
-@benchmark("commonmark")
+@benchmark("CommonMark")
 def run_commonmark(package):
     with open(TEST_FILE, "r") as fin:
         return package.commonmark(fin.read())
