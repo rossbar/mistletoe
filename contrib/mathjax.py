@@ -2,8 +2,8 @@
 Provides MathJax support for rendering Markdown with LaTeX to html.
 """
 
-from mistletoe.renderers.html import HTMLRenderer
-from mistletoe.renderers.latex import LaTeXRenderer
+from mistletoe.html_renderer import HTMLRenderer
+from mistletoe.latex_renderer import LaTeXRenderer
 
 
 class MathJaxRenderer(HTMLRenderer, LaTeXRenderer):

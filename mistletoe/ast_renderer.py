@@ -3,26 +3,23 @@ Abstract syntax tree renderer for mistletoe.
 """
 
 import json
-from mistletoe.renderers.base import BaseRenderer
+from mistletoe.base_renderer import BaseRenderer
 
 
-class JsonRenderer(BaseRenderer):
-    def render(self, token, as_string=True):
+class ASTRenderer(BaseRenderer):
+    def render(self, token):
         """
-        Returns the JSON string representation of the AST.
+        Returns the string representation of the AST.
 
-        Overrides super().render. Delegates the logic to ast_to_json.
+        Overrides super().render. Delegates the logic to get_ast.
         """
-        dct = ast_to_json(token)
-        if as_string:
-            return json.dumps(dct, indent=2) + "\n"
-        return dct
+        return json.dumps(get_ast(token), indent=2) + "\n"
 
     def __getattr__(self, name):
         return lambda token: ""
 
 
-def ast_to_json(token):
+def get_ast(token):
     """
     Recursively unrolls token attributes into dictionaries (token.children
     into lists).
@@ -37,10 +34,10 @@ def ast_to_json(token):
     #
     #   [1]: https://docs.python.org/3/whatsnew/3.6.html
     #   [2]: https://github.com/syntax-tree/mdast
-    node["type"] = token.name
-    node.update(token.to_dict())
+    node["type"] = token.__class__.__name__
+    node.update(token.__dict__)
     if "header" in node:
-        node["header"] = ast_to_json(token.header)
-    if token.children is not None:
-        node["children"] = [ast_to_json(child) for child in token.children]
+        node["header"] = get_ast(node["header"])
+    if "children" in node:
+        node["children"] = [get_ast(child) for child in node["children"]]
     return node

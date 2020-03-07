@@ -75,7 +75,7 @@ and rendering to HTML. The function also accepts an additional argument
 <code>renderer</code>. To produce LaTeX output:
 </p>
 <pre><code class="lang-python">import mistletoe
-from mistletoe.renderers.latex import LaTeXRenderer
+from mistletoe.latex_renderer import LaTeXRenderer
 
 with open(&#x27;foo.md&#x27;, &#x27;r&#x27;) as fin:
     rendered = mistletoe.markdown(fin, LaTeXRenderer)
@@ -89,7 +89,7 @@ process.
 
 with open(&#x27;foo.md&#x27;, &#x27;r&#x27;) as fin:
     with HTMLRenderer() as renderer:
-        rendered = renderer.render(Document.read(fin))
+        rendered = renderer.render(Document(fin))
 </code></pre>
 <h3>From the command-line</h3>
 <p>pip installation enables mistletoe&#x27;s commandline utility. Type the following
@@ -193,7 +193,7 @@ child.  To parse child tokens, simply pass <code>match_obj</code> to the <code>s
 constructor (which assumes children to be in <code>match_obj.group(1)</code>),
 and save off all the additional attributes we need:
 </p>
-<pre><code class="lang-python">from mistletoe.base_elements import SpanToken
+<pre><code class="lang-python">from mistletoe.span_token import SpanToken
 
 class GithubWiki(SpanToken):
     pattern = re.compile(r&quot;\[\[ *(.+?) *\| *(.+?) *\]\]&quot;)
@@ -209,7 +209,7 @@ of nasty implementation details. Fortunately, mistletoe takes care
 of most of them for you. Simply pass your custom token class to
 <code>super().__init__()</code> does the trick:
 </p>
-<pre><code class="lang-python">from mistletoe.renderers.html import HTMLRenderer
+<pre><code class="lang-python">from mistletoe.html_renderer import HTMLRenderer
 
 class GithubWikiRenderer(HTMLRenderer):
     def __init__(self):
@@ -225,7 +225,7 @@ class GithubWikiRenderer(HTMLRenderer):
 </code></pre>
 <p>Cleaning up, we have our new renderer class:
 </p>
-<pre><code class="lang-python">from mistletoe.renderers.html import HTMLRenderer, escape_url
+<pre><code class="lang-python">from mistletoe.html_renderer import HTMLRenderer, escape_url
 
 class GithubWikiRenderer(HTMLRenderer):
     def __init__(self):
@@ -248,7 +248,7 @@ from contrib.github_wiki import GithubWikiRenderer
 
 with open(&#x27;foo.md&#x27;, &#x27;r&#x27;) as fin:
     with GithubWikiRenderer() as renderer:
-        rendered = renderer.render(Document.read(fin))
+        rendered = renderer.render(Document(fin))
 </code></pre>
 <p>For more info, take a look at the <code>base_renderer</code> module in mistletoe.
 The docstrings might give you a more granular idea of customizing mistletoe
