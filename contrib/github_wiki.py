@@ -4,7 +4,7 @@ GitHub Wiki support for mistletoe.
 
 import re
 
-from mistletoe import span_tokens
+from mistletoe import span_tokens, span_tokens_ext
 from mistletoe.base_elements import SpanToken
 from mistletoe.renderers.html import HTMLRenderer
 
@@ -15,8 +15,13 @@ __all__ = ["GithubWiki", "GithubWikiRenderer"]
 class GithubWiki(SpanToken):
     pattern = re.compile(r"\[\[ *(.+?) *\| *(.+?) *\]\]")
 
-    def __init__(self, match):
-        self.target = match.group(2)
+    def __init__(self, *, target: str):
+        """:param target: link target"""
+        self.target = target
+
+    @classmethod
+    def read(cls, match):
+        return cls(target=match.group(2))
 
 
 class GithubWikiRenderer(HTMLRenderer):
@@ -26,7 +31,7 @@ class GithubWikiRenderer(HTMLRenderer):
         span_tokens.HTMLSpan,
         span_tokens.AutoLink,
         span_tokens.CoreTokens,
-        span_tokens.Strikethrough,
+        span_tokens_ext.Strikethrough,
         span_tokens.InlineCode,
         span_tokens.LineBreak,
         span_tokens.RawText,

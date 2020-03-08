@@ -4,7 +4,7 @@ from itertools import chain
 import re
 import sys
 
-from mistletoe import block_tokens, span_tokens
+from mistletoe import block_tokens, block_tokens_ext, span_tokens, span_tokens_ext
 from mistletoe.parse_context import ParseContext, get_parse_context, set_parse_context
 
 
@@ -45,22 +45,24 @@ class BaseRenderer(object):
     """
 
     default_block_tokens = (
+        block_tokens.HTMLBlock,
         block_tokens.BlockCode,
         block_tokens.Heading,
         block_tokens.Quote,
         block_tokens.CodeFence,
         block_tokens.ThematicBreak,
         block_tokens.List,
-        block_tokens.Table,
+        block_tokens_ext.Table,
         block_tokens.LinkDefinition,
         block_tokens.Paragraph,
     )
 
     default_span_tokens = (
         span_tokens.EscapeSequence,
+        span_tokens.HTMLSpan,
         span_tokens.AutoLink,
         span_tokens.CoreTokens,
-        span_tokens.Strikethrough,
+        span_tokens_ext.Strikethrough,
         span_tokens.InlineCode,
         span_tokens.LineBreak,
         span_tokens.RawText,

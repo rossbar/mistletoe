@@ -300,8 +300,7 @@ that stores the compiled regex:
 ```python
 class GithubWiki(SpanToken):
     pattern = re.compile(r"\[\[ *(.+?) *\| *(.+?) *\]\]")
-    def __init__(self, match):
-        pass
+
 ```
 
 The regex will be picked up by `SpanToken.find`, which is used by the
@@ -332,16 +331,21 @@ the list of child tokens.
 Note that there is no need to manually set this attribute,
 unlike previous versions of mistletoe.
 
-Lastly, the `SpanToken` constructors take a regex match object as its argument.
-We can simply store off the `target` attribute from `match_obj.group(2)`.
+Lastly, the `SpanToken.read` method takes a regex match object as its argument, which is used to instatiate the token.
+We can simply extract the `target` attribute from `match_obj.group(2)`.
 
 ```python
 from mistletoe.base_elements import SpanToken
 
 class GithubWiki(SpanToken):
     pattern = re.compile(r"\[\[ *(.+?) *\| *(.+?) *\]\]")
-    def __init__(self, match_obj):
-        self.target = match_obj.group(2)
+
+    def __init__(self, target: str):
+        self.target = target
+
+    @classmethod
+    def read(cls, match):
+        return cls(target=match.group(2))
 ```
 
 There you go: a new token in 5 lines of code.

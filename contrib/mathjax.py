@@ -18,7 +18,7 @@ class MathJaxRenderer(HTMLRenderer, LaTeXRenderer):
         span_tokens.AutoLink,
         span_tokens.CoreTokens,
         span_tokens_ext.Math,
-        span_tokens.Strikethrough,
+        span_tokens_ext.Strikethrough,
         span_tokens.InlineCode,
         span_tokens.LineBreak,
         span_tokens.RawText,
