@@ -8,7 +8,6 @@ import attr
 from mistletoe import BaseRenderer, base_elements
 from mistletoe.span_tokenizer import tokenize_span
 from mistletoe.nested_tokenizer import MatchObj
-from mistletoe.parse_context import get_parse_context
 
 
 @attr.s(slots=True, kw_only=True)
@@ -95,17 +94,12 @@ class Procedure:
 
 
 class Scheme(BaseRenderer):
+
+    default_block_tokens = (Program,)
+    default_span_tokens = (Expr, Number, String, Variable, Whitespace)
+
     def __init__(self):
-        self.render_map = {
-            "Program": self.render_program,
-            "Expr": self.render_expr,
-            "Number": self.render_number,
-            "String": self.render_string,
-            "Variable": self.render_variable,
-        }
-        self.parse_context = get_parse_context()
-        self.parse_context.block_tokens = [Program]
-        self.parse_context.span_tokens = [Expr, Number, String, Variable, Whitespace]
+        super().__init__()
 
         self.env = ChainMap(
             {
@@ -192,9 +186,3 @@ class Scheme(BaseRenderer):
         finally:
             self.env = old_env
         return result
-
-
-if __name__ == "__main__":
-    with Scheme() as renderer:
-        prog = ["(define x (* 2 21))", "x"]
-        print(renderer.render(Program(prog)))
