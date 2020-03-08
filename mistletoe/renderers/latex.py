@@ -1,21 +1,31 @@
 """
 LaTeX renderer for mistletoe.
 """
-
-from itertools import chain
-import mistletoe.latex_token as latex_token
+from mistletoe import span_tokens, span_tokens_ext
 from mistletoe.renderers.base import BaseRenderer
 
 
 class LaTeXRenderer(BaseRenderer):
-    def __init__(self, *extras):
+
+    default_span_tokens = (
+        span_tokens.EscapeSequence,
+        span_tokens.AutoLink,
+        span_tokens.CoreTokens,
+        span_tokens_ext.Math,
+        span_tokens.Strikethrough,
+        span_tokens.InlineCode,
+        span_tokens.LineBreak,
+        span_tokens.RawText,
+    )
+
+    def __init__(self, find_blocks=None, find_spans=None):
+        """Initialise the renderer
+
+        :param find_blocks: override the default block tokens (classes or class paths)
+        :param find_spans: override the default span tokens (classes or class paths)
         """
-        Args:
-            extras (list): allows subclasses to add even more custom tokens.
-        """
-        tokens = self._tokens_from_module(latex_token)
         self.packages = {}
-        super().__init__(*chain(tokens, extras))
+        super().__init__(find_blocks=find_blocks, find_spans=find_spans)
 
     def render_strong(self, token):
         return "\\textbf{{{}}}".format(self.render_inner(token))

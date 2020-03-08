@@ -5,15 +5,17 @@ import re
 
 from mistletoe import nested_tokenizer
 from mistletoe.base_elements import SpanToken
+from mistletoe.parse_context import get_parse_context
+from mistletoe.span_tokens_ext import Strikethrough
 
 """
 Tokens to be included in the parsing process, in the order specified.
 """
 __all__ = [
     "EscapeSequence",
-    "Strikethrough",
     "AutoLink",
     "CoreTokens",
+    "Strikethrough",
     "InlineCode",
     "LineBreak",
     "RawText",
@@ -59,17 +61,8 @@ class InlineCode(SpanToken):
 
     @classmethod
     def find(cls, string):
-        matches = nested_tokenizer._code_matches.value
-        nested_tokenizer._code_matches.value = []
+        matches = get_parse_context().nesting_matches.pop("InlineCode", [])
         return matches
-
-
-class Strikethrough(SpanToken):
-    """
-    Strikethrough tokens. ("~~some text~~")
-    """
-
-    pattern = re.compile(r"(?<!\\)(?:\\\\)*~~(.+?)~~", re.DOTALL)
 
 
 class Image(SpanToken):
