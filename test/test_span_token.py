@@ -1,7 +1,8 @@
 import pytest
 
 from mistletoe.span_tokenizer import tokenize_span
-from mistletoe.span_tokens import HTMLSpan
+from mistletoe.span_tokens import CoreTokens, HTMLSpan
+from mistletoe.span_tokens_ext import Math
 from mistletoe.base_elements import serialize_tokens
 from mistletoe.parse_context import get_parse_context
 
@@ -43,7 +44,12 @@ def test_inline_code(name, source, data_regression):
 
 
 @pytest.mark.parametrize(
-    "name,source", [("basic", "~~some text~~"), ("multi", "~~one~~ ~~two~~")]
+    "name,source",
+    [
+        ("basic", "~~some text~~"),
+        ("multi", "~~one~~ ~~two~~"),
+        ("nesting", "~~*some text*~~"),
+    ],
 )
 def test_strikethrough(name, source, data_regression):
     data_regression.check(
@@ -91,7 +97,8 @@ def test_image(name, source, data_regression):
 
 
 @pytest.mark.parametrize(
-    "name,source", [("single_star", "\\*"), ("emphasis", "some \\*text*")]
+    "name,source",
+    [("single_star", "\\*"), ("emphasis", "some \\*text*"), ("in_code", "`a \\* b`")],
 )
 def test_escape_sequence(name, source, data_regression):
     data_regression.check(
@@ -128,6 +135,33 @@ def test_html_span(name, source, data_regression):
 @pytest.mark.parametrize(
     "name,source",
     [
+        ("basic", "$a$"),
+        ("contains_special_chars", "$a`{_*-%$"),
+        ("preceding_special_chars", "{_*-%`$a$"),
+        ("multiple", "$a$ $b$"),
+        ("escaped_opening", "\\$a $b$"),
+        ("no_closing", "$a"),
+        ("internal_emphasis", "$*a*$"),
+        ("external_emphasis", "*$a$*"),
+        ("multi-line", "$$a\nc\nb$$"),
+        ("dollar_in_code", "a `$` `$x=1$` renders $x=1$."),
+        ("in_link_content", "[$a$](link)"),
+        ("in_link_target", "[a]($b$)"),
+        ("in_image", "![$a$]($b$)"),
+    ],
+)
+def test_math_span(name, source, data_regression):
+    _span_tokens = get_parse_context().span_tokens
+    _span_tokens.insert(_span_tokens.index(CoreTokens) + 1, Math)
+    data_regression.check(
+        serialize_tokens(tokenize_span(source), as_dict=True),
+        basename=f"test_math_span_{name}",
+    )
+
+
+@pytest.mark.parametrize(
+    "name,source",
+    [
         ("emph_in_strong", "**with some *emphasis* text**"),
         ("strong_in_emph", "*with some **strong** text*"),
         ("star_underline", "*__some text__*"),
@@ -138,6 +172,8 @@ def test_html_span(name, source, data_regression):
         ("underscore_in_inline_code", "`_a_`"),
         ("inline_code_in_star", "*`a`*"),
         ("inline_code_in_underscore", "_`a`_"),
+        ("auto_link_plus_code", "`<`abc>  <abc`>`"),
+        ("strikethrough_plus_code", "`~~`abc ~~abc~~ `~~`"),
     ],
 )
 def test_nested(name, source, data_regression):
