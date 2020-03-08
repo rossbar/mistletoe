@@ -1,0 +1,8 @@
+- RawText:
+    content: '*'
+- InlineCode:
+    children:
+    - RawText:
+        content: a
+- RawText:
+    content: '*'
