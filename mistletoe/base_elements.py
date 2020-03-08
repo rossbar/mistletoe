@@ -1,6 +1,6 @@
 from collections import namedtuple
 import json
-from typing import List, Optional
+from typing import List, Optional, Pattern
 
 import attr
 
@@ -187,10 +187,13 @@ class BlockToken(Token):
 class SpanToken(Token):
     """Base class for span-level tokens.
 
-    - `pattern`: regex pattern to search for
-    - To parse child tokens, `parse_inner` should be set to `True`.
-    - `parse_group` corresponds to the match group in which child tokens might occur
-    - `precedence`: Alter the relative order by which the span token is assessed.
+    :cvar pattern: regex pattern to search for.
+    :cvar parse_inner: whether to do a nested parse of the content
+    :cvar parse_group: the group within the pattern match corresponding to the content
+    :cvar precedence: Alter the relative order by which the span token is assessed.
+
+    :ivar content: raw string content of the token
+    :ivar children: list of child tokens
     """
 
     pattern = None
@@ -198,9 +201,20 @@ class SpanToken(Token):
     parse_group = 1
     precedence = 5
 
-    def __init__(self, match):
-        if not self.parse_inner:
-            self.content = match.group(self.parse_group)
+    def __init__(
+        self, *, content: Optional[str] = None, children: Optional[list] = None
+    ):
+        if content is not None:
+            self.content = content
+        if children is not None:
+            self.children = children
+
+    @classmethod
+    def read(cls, match: Pattern):
+        """Take a pattern match and return the instatiated token."""
+        if not cls.parse_inner:
+            return cls(content=match.group(cls.parse_group))
+        return cls()
 
     @classmethod
     def find(cls, string: str):

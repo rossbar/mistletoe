@@ -1,18 +1,32 @@
 """
 LaTeX renderer for mistletoe.
 """
-from mistletoe import span_tokens, span_tokens_ext
+from mistletoe import block_tokens, block_tokens_ext, span_tokens, span_tokens_ext
 from mistletoe.renderers.base import BaseRenderer
 
 
 class LaTeXRenderer(BaseRenderer):
 
+    default_block_tokens = (
+        # block_tokens.HTMLBlock,
+        block_tokens.BlockCode,
+        block_tokens.Heading,
+        block_tokens.Quote,
+        block_tokens.CodeFence,
+        block_tokens.ThematicBreak,
+        block_tokens.List,
+        block_tokens_ext.Table,
+        block_tokens.LinkDefinition,
+        block_tokens.Paragraph,
+    )
+
     default_span_tokens = (
         span_tokens.EscapeSequence,
+        # span_tokens.HTMLSpan,
         span_tokens.AutoLink,
         span_tokens.CoreTokens,
         span_tokens_ext.Math,
-        span_tokens.Strikethrough,
+        span_tokens_ext.Strikethrough,
         span_tokens.InlineCode,
         span_tokens.LineBreak,
         span_tokens.RawText,

@@ -5,7 +5,6 @@ HTML renderer for mistletoe.
 import re
 import sys
 from urllib.parse import quote
-from mistletoe import block_tokens, span_tokens
 from mistletoe.renderers.base import BaseRenderer
 
 if sys.version_info < (3, 4):
@@ -16,30 +15,6 @@ else:
 
 class HTMLRenderer(BaseRenderer):
     """HTML renderer class."""
-
-    default_block_tokens = (
-        block_tokens.HTMLBlock,
-        block_tokens.BlockCode,
-        block_tokens.Heading,
-        block_tokens.Quote,
-        block_tokens.CodeFence,
-        block_tokens.ThematicBreak,
-        block_tokens.List,
-        block_tokens.Table,
-        block_tokens.LinkDefinition,
-        block_tokens.Paragraph,
-    )
-
-    default_span_tokens = (
-        span_tokens.EscapeSequence,
-        span_tokens.HTMLSpan,
-        span_tokens.AutoLink,
-        span_tokens.CoreTokens,
-        span_tokens.Strikethrough,
-        span_tokens.InlineCode,
-        span_tokens.LineBreak,
-        span_tokens.RawText,
-    )
 
     def __init__(self, find_blocks=None, find_spans=None):
         """Initialise the renderer

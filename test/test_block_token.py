@@ -1,6 +1,6 @@
 import pytest
 
-from mistletoe import block_tokens
+from mistletoe import block_tokens, block_tokens_ext
 from mistletoe.base_elements import serialize_tokens
 from mistletoe.parse_context import get_parse_context
 from mistletoe.block_tokenizer import tokenize_main
@@ -206,13 +206,15 @@ def test_doc_read_store_link_defs(name, source, data_regression):
 
 
 def test_table_parse_align():
-    assert block_tokens.Table.parse_align(":------") is None
-    assert block_tokens.Table.parse_align(":-----:") == 0
-    assert block_tokens.Table.parse_align("------:") == 1
+    assert block_tokens_ext.Table.parse_align(":------") is None
+    assert block_tokens_ext.Table.parse_align(":-----:") == 0
+    assert block_tokens_ext.Table.parse_align("------:") == 1
 
 
 def test_table_parse_delimiter():
-    delimiters = list(block_tokens.Table.split_delimiter("| :--- | :---: | ---:|\n"))
+    delimiters = list(
+        block_tokens_ext.Table.split_delimiter("| :--- | :---: | ---:|\n")
+    )
     assert delimiters == [":---", ":---:", "---:"]
 
 
@@ -251,12 +253,12 @@ def test_table(name, source, data_regression):
     ],
 )
 def test_table_row(name, source, row_align, data_regression):
-    row = block_tokens.TableRow.read(source, row_align=row_align)
+    row = block_tokens_ext.TableRow.read(source, row_align=row_align)
     data_regression.check(
         serialize_tokens(row, as_dict=True), basename=f"test_table_row_{name}"
     )
 
 
 def test_table_cell(data_regression):
-    token = block_tokens.TableCell.read("cell 2")
+    token = block_tokens_ext.TableCell.read("cell 2")
     data_regression.check(serialize_tokens(token, as_dict=True))

@@ -28,30 +28,29 @@ class Expr(base_elements.SpanToken):
                 matches.append(MatchObj(pos, end_pos, (pos + 1, i, content)))
         return matches
 
-    def __repr__(self):
-        return "<Expr {}>".format(self.children)
-
 
 class Number(base_elements.SpanToken):
     pattern = re.compile(r"(\d+)")
     parse_inner = False
 
-    def __init__(self, match):
-        self.number = eval(match.group(0))
+    def __init__(self, *, number: int):
+        self.number = number
 
-    def __repr__(self):
-        return "<Number {}>".format(self.number)
+    @classmethod
+    def read(cls, match):
+        return cls(number=eval(match.group(0)))
 
 
 class Variable(base_elements.SpanToken):
     pattern = re.compile(r"([^\s()]+)")
     parse_inner = False
 
-    def __init__(self, match):
-        self.name = match.group(0)
+    def __init__(self, name: str):
+        self.name = name
 
-    def __repr__(self):
-        return "<Variable {!r}>".format(self.name)
+    @classmethod
+    def read(cls, match):
+        return cls(name=match.group(0))
 
 
 class Whitespace(base_elements.SpanToken):

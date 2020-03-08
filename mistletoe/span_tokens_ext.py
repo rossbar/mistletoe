@@ -1,4 +1,6 @@
-"""Extended span tokens, that are not part of the CommonMark spec."""
+"""
+Extended span tokens, that are not part of the CommonMark spec.
+"""
 import re
 from mistletoe.base_elements import SpanToken
 from mistletoe.parse_context import get_parse_context
