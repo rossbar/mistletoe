@@ -1,8 +1,6 @@
-- RawText:
-    content: _
-- InlineCode:
+- Emphasis:
     children:
-    - RawText:
-        content: a
-- RawText:
-    content: _
+    - InlineCode:
+        children:
+        - RawText:
+            content: a

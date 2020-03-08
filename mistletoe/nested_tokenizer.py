@@ -87,11 +87,18 @@ def find_nested_tokenizer(string):
     i = 0
     code_match = code_pattern.search(string)
     while i < len(string):
+
         if code_match is not None and i == code_match.start():
+
+            if in_delimiter_run:
+                delimiters.append(Delimiter(start, i, string))
+            in_delimiter_run = None
+
             _code_matches.value.append(code_match)
             i = code_match.end()
             code_match = code_pattern.search(string, i)
             continue
+
         c = string[i]
         if c == "\\" and not escaped:
             escaped = True

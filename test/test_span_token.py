@@ -136,8 +136,6 @@ def test_html_span(name, source, data_regression):
         ("link_in_emph", "*[*some text*](link)*"),
         ("star_in_inline_code", "`*a*`"),
         ("underscore_in_inline_code", "`_a_`"),
-        # TODO these do not wrap the inline in emphasis, which is wrong!
-        # noted in miyuchina/mistletoe#70
         ("inline_code_in_star", "*`a`*"),
         ("inline_code_in_underscore", "_`a`_"),
     ],
