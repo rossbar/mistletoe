@@ -71,7 +71,7 @@ def test_extra_tokens():
             {
                 "type": "Paragraph",
                 "children": [{"type": "RawText", "content": "$b$"}],
-                "position": [1, 1],
+                "position": (1, 1),
             }
         ],
     }
@@ -83,7 +83,7 @@ def test_extra_tokens():
             {
                 "type": "Paragraph",
                 "children": [{"type": "Math", "content": "$b$"}],
-                "position": [1, 1],
+                "position": (1, 1),
             }
         ],
     }

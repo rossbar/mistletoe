@@ -41,7 +41,7 @@ class Token:
     def to_dict(self) -> dict:
         """Convert instatiated attributes to a dict"""
         try:
-            return attr.asdict(self)
+            return attr.asdict(self, recurse=False)
         except attr.exceptions.NotAnAttrsClassError:
             return self.__dict__
 

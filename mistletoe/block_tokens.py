@@ -851,6 +851,7 @@ class TableCell(BlockToken):
 class LinkDefinition(BlockToken):
     """LinkDefinition token: `[ref]: url "title"`"""
 
+    definitions: list = attr.ib(metadata={"doc": "list of (label, dest, title)"})
     position: Tuple[int, int] = attr.ib(
         metadata={"doc": "Line position in source text (start, end)"}
     )
@@ -879,7 +880,11 @@ class LinkDefinition(BlockToken):
             offset, match = match_info
             matches.append(match)
         cls.append_link_definitions(matches)
-        return cls(position=(start_line, lines.lineno)) if matches else None
+        return (
+            cls(position=(start_line, lines.lineno), definitions=matches)
+            if matches
+            else None
+        )
 
     @classmethod
     def match_reference(cls, lines, string, offset):
